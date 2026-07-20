@@ -1,0 +1,312 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum GfaUnit {
+  SQFT
+  SQM
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  passwordHash       String
+  name               String
+  role               UserRole  @default(VIEWER)
+  preferredGfaUnit   GfaUnit   @default(SQFT)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  auditLogs          AuditLog[]
+}
+
+model Company {
+  id                 String    @id @default(uuid())
+  name               String
+  registrationNumber String?
+  countryCode        String    @db.Char(2)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  properties         PropertyCompany[]
+  notes              CompanyNote[]
+  snapshots          CompanyMonthlySnapshot[]
+}
+
+model PropertyType {
+  id        String   @id @default(uuid())
+  name      String
+  parentId  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent    PropertyType?  @relation("TypeHierarchy", fields: [parentId], references: [id])
+  children  PropertyType[] @relation("TypeHierarchy")
+  properties Property[]
+}
+
+enum PropertyLevel {
+  building
+  unit
+}
+
+enum GeocodeStatus {
+  pending
+  success
+  failed
+  manual_override
+}
+
+model Property {
+  id                String        @id @default(uuid())
+  parentId          String?
+  propertyLevel     PropertyLevel
+  propertyTypeId    String
+  name              String?
+  addressLine1      String
+  addressLatin      String?
+  addressNormalized String
+  city              String
+  postalCode        String?
+  countryCode       String        @db.Char(2)
+  latitude          Float?
+  longitude         Float?
+  geocodeStatus     GeocodeStatus @default(pending)
+  geocodeAttempts   Int           @default(0)
+  gfaSqft           Float?
+  gfaInputValue     Float?
+  gfaInputUnit      String?       // sqft, sqm, etc.
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+
+  parent            Property?         @relation("PropertyUnits", fields: [parentId], references: [id])
+  units             Property[]        @relation("PropertyUnits")
+  type              PropertyType      @relation(fields: [propertyTypeId], references: [id])
+  companies         PropertyCompany[]
+  changeLogs        PropertyChangeLog[]
+  scrapeLogs        PropertyScrapeLog[]
+
+  // For duplicates (either as the first or second in the pair)
+  duplicatePairs1   DuplicatePair[] @relation("Property1")
+  duplicatePairs2   DuplicatePair[] @relation("Property2")
+}
+
+enum OwnershipStatus {
+  active
+  sold
+  transferred
+  reversed
+}
+
+model PropertyCompany {
+  id           String          @id @default(uuid())
+  propertyId   String
+  companyId    String
+  ownershipPct Float
+  status       OwnershipStatus @default(active)
+  validFrom    DateTime        @default(now())
+  validTo      DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  property     Property        @relation(fields: [propertyId], references: [id])
+  company      Company         @relation(fields: [companyId], references: [id])
+  statusLogs   PropertyStatusLog[]
+  transferLegs PropertyTransferLeg[]
+}
+
+model PropertyStatusLog {
+  id                String          @id @default(uuid())
+  propertyCompanyId String
+  oldStatus         OwnershipStatus
+  newStatus         OwnershipStatus
+  changedAt         DateTime        @default(now())
+  reason            String?
+
+  propertyCompany   PropertyCompany @relation(fields: [propertyCompanyId], references: [id])
+}
+
+enum TransferType {
+  transfer
+  swap
+  reversal
+}
+
+model PropertyTransfer {
+  id                String        @id @default(uuid())
+  type              TransferType
+  transferDate      DateTime      @default(now())
+  reversedBy        String?       // ID of the reversal transfer event
+  notes             String?
+  createdAt         DateTime      @default(now())
+
+  legs              PropertyTransferLeg[]
+}
+
+model PropertyTransferLeg {
+  id                 String          @id @default(uuid())
+  transferId         String
+  propertyCompanyId  String          // The record that was closed or opened
+  direction          String          // 'out' (closing) or 'in' (opening)
+  
+  transfer           PropertyTransfer @relation(fields: [transferId], references: [id])
+  propertyCompany    PropertyCompany  @relation(fields: [propertyCompanyId], references: [id])
+}
+
+enum DuplicateStatus {
+  pending
+  duplicate
+  not_duplicate
+  merged
+}
+
+model DuplicatePair {
+  id          String          @id @default(uuid())
+  property1Id String
+  property2Id String
+  status      DuplicateStatus @default(pending)
+  matchLevel  String          // building, unit, cross_level
+  scope       String          // same_company, cross_company, no_shared_ownership
+  score       Float?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  property1   Property        @relation("Property1", fields: [property1Id], references: [id])
+  property2   Property        @relation("Property2", fields: [property2Id], references: [id])
+}
+
+model MergeLog {
+  id          String   @id @default(uuid())
+  keepId      String
+  removeId    String
+  mergedAt    DateTime @default(now())
+  mergedBy    String
+  details     Json?
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  changedAt  DateTime @default(now())
+  tableName  String
+  recordId   String
+  userId     String?
+  action     String   // INSERT, UPDATE, DELETE
+  diff       Json?
+
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([tableName, recordId])
+  @@index([changedAt])
+}
+
+model PropertyChangeLog {
+  id         String    @id @default(uuid())
+  propertyId String
+  userId     String
+  entry      String
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+  deleteReason String?
+
+  property   Property  @relation(fields: [propertyId], references: [id])
+}
+
+enum ImportStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+model ImportJob {
+  id         String       @id @default(uuid())
+  userId     String
+  status     ImportStatus @default(pending)
+  filename   String
+  rowCount   Int?
+  errorLog   Json?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model PropertyScrapeLog {
+  id         String   @id @default(uuid())
+  propertyId String
+  source     String
+  externalId String?
+  data       Json?
+  scrapedAt  DateTime @default(now())
+
+  property   Property @relation(fields: [propertyId], references: [id])
+}
+
+model GeocodeQueue {
+  id         String   @id @default(uuid())
+  propertyId String
+  attempts   Int      @default(0)
+  lastError  String?
+  nextRunAt  DateTime @default(now())
+  createdAt  DateTime @default(now())
+}
+
+model CompanyNote {
+  id          String   @id @default(uuid())
+  companyId   String
+  userId      String
+  title       String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  company     Company  @relation(fields: [companyId], references: [id])
+  attachments CompanyNoteAttachment[]
+}
+
+model CompanyNoteAttachment {
+  id          String   @id @default(uuid())
+  noteId      String
+  filename    String
+  fileSize    Int
+  mimeType    String
+  storagePath String
+  createdAt   DateTime @default(now())
+
+  note        CompanyNote @relation(fields: [noteId], references: [id])
+}
+
+model CompanyMonthlySnapshot {
+  id               String   @id @default(uuid())
+  companyId        String
+  month            String   // YYYY-MM
+  propertyCount    Int
+  totalGfaSqft     Float
+  activeStakeCount Int
+  data             Json?
+  createdAt        DateTime @default(now())
+
+  company          Company  @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, month])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
