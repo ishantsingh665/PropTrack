@@ -1,27 +1,19 @@
 services:
-  postgres:
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-proptrack}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
+    mem_limit: 150m
+    memswap_limit: 300m
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-proptrack}
+      - DATABASE_URL=postgresql://betahobby_admin:Fasting-Geography-Dating8-Bridged@postgres:5432/proptrack
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_USER=${MINIO_ROOT_USER:-proptrack_admin}
-      - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD:-proptrack_password}
-      - MINIO_BUCKET=${MINIO_BUCKET:-proptrack}
+      - MINIO_ENDPOINT=http://localhost:9000
+      - MINIO_USER=placeholder
+      - MINIO_PASSWORD=placeholder
+      - MINIO_BUCKET=proptrack
       - FILE_SIZE_LIMIT_MB=25
       - NOMINATIM_URL=https://nominatim.openstreetmap.org
       - GEOCODE_MAX_ATTEMPTS=3
@@ -30,33 +22,30 @@ services:
       - NODE_ENV=production
       - FRONTEND_URL=${DOMAIN_URL}
       - MINIO_PUBLIC_ENDPOINT=${DOMAIN_URL}/minio
-    depends_on:
-      - postgres
-      - minio
+    depends_on: []
+    networks:
+      - postgres-net
+      - default
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     restart: always
+    mem_limit: 30m
+    memswap_limit: 60m
     ports:
       - "80:80"
     depends_on:
       - backend
+    networks:
+      - default
 
-  minio:
-    image: minio/minio
-    restart: always
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-proptrack_admin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-proptrack_password}
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
+volumes: {}
 
-volumes:
-  postgres_data:
-  minio_data:
+networks:
+  postgres-net:
+    external: true
+    name: postgres-net
+  default:
+    driver: bridge

@@ -3,12 +3,23 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 export class MinioService {
-  private client: Minio.Client;
+  private client: Minio.Client | null = null;
   private bucket: string;
-  private internalEndpoint: string;
+  private internalEndpoint: string = '';
+  private isDisabled: boolean = false;
 
   constructor() {
-    const endPoint = process.env.MINIO_ENDPOINT || 'localhost';
+    const endPoint = process.env.MINIO_ENDPOINT;
+    const user = process.env.MINIO_USER;
+
+    // Consider disabled if endpoint is localhost (within docker) or user is placeholder
+    if (!endPoint || endPoint.includes('localhost') || user === 'placeholder') {
+      this.isDisabled = true;
+      this.bucket = 'proptrack';
+      console.warn('MinIO storage is disabled (no valid endpoint or placeholder user).');
+      return;
+    }
+
     const useSSL = endPoint.startsWith('https');
     const protocol = useSSL ? 'https:' : 'http:';
     const host = endPoint.replace(/^https?:\/\//, '').split(':')[0];
@@ -20,7 +31,7 @@ export class MinioService {
       endPoint: host,
       port: port,
       useSSL: useSSL,
-      accessKey: process.env.MINIO_USER || 'proptrack_admin',
+      accessKey: user || 'proptrack_admin',
       secretKey: process.env.MINIO_PASSWORD || 'proptrack_password',
     });
 
@@ -29,6 +40,7 @@ export class MinioService {
   }
 
   private async ensureBucket() {
+    if (this.isDisabled || !this.client) return;
     try {
       const exists = await this.client.bucketExists(this.bucket);
       if (!exists) {
@@ -37,10 +49,15 @@ export class MinioService {
       }
     } catch (err) {
       console.error('Error checking/creating MinIO bucket:', err);
+      this.isDisabled = true; // Disable on failure to prevent repeated errors
     }
   }
 
   async uploadFile(fileBuffer: Buffer, originalFilename: string, mimeType: string) {
+    if (this.isDisabled || !this.client) {
+      throw new Error('Storage service is currently disabled.');
+    }
+
     const now = new Date();
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -56,6 +73,10 @@ export class MinioService {
   }
 
   async getDownloadUrl(storagePath: string, originalFilename: string) {
+    if (this.isDisabled || !this.client) {
+      throw new Error('Storage service is currently disabled.');
+    }
+
     const url = await this.client.presignedGetObject(this.bucket, storagePath, 3600, {
       'response-content-disposition': `attachment; filename="${originalFilename}"`,
     });
@@ -69,6 +90,7 @@ export class MinioService {
   }
 
   async deleteFile(storagePath: string) {
+    if (this.isDisabled || !this.client) return;
     await this.client.removeObject(this.bucket, storagePath);
   }
 }
