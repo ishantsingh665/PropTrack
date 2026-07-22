@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
   RefreshCw, 
@@ -17,7 +18,9 @@ import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
 const GeocodingManagement: React.FC = () => {
-  const [jobs, setJobs] = useState<GeocodeJob[]>([]);
+  const navigate = useNavigate();
+  const [queue, setQueue] = useState<GeocodeJob[]>([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 

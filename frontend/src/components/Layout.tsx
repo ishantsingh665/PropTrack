@@ -244,19 +244,19 @@ const Layout: React.FC = () => {
       >
         {location.pathname.startsWith('/companies') && (
           <CompanyForm 
-            onSubmit={() => { setIsHeaderModalOpen(false); window.location.reload(); }} 
+            onSubmit={async () => { setIsHeaderModalOpen(false); window.location.reload(); }} 
             onCancel={() => setIsHeaderModalOpen(false)} 
           />
         )}
         {location.pathname.startsWith('/properties') && (
           <PropertyForm 
-            onSubmit={() => { setIsHeaderModalOpen(false); window.location.reload(); }} 
+            onSubmit={async () => { setIsHeaderModalOpen(false); window.location.reload(); }} 
             onCancel={() => setIsHeaderModalOpen(false)} 
           />
         )}
         {location.pathname.startsWith('/transfers') && (
           <TransferForm 
-            onSubmit={() => { setIsHeaderModalOpen(false); window.location.reload(); }} 
+            onSubmit={async () => { setIsHeaderModalOpen(false); window.location.reload(); }} 
             onCancel={() => setIsHeaderModalOpen(false)} 
           />
         )}

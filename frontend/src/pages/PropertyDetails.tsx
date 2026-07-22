@@ -7,6 +7,8 @@ import {
   Layers, 
   History, 
   Users, 
+  User,
+  Check,
   Calendar, 
   Trash2, 
   Edit2, 
@@ -24,7 +26,8 @@ import {
   getPropertyHistory, 
   getPropertyOwnership, 
   deleteHistoryEntry,
-  updatePropertyStatus
+  updatePropertyStatus,
+  updateProperty
 } from '../api/properties';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
@@ -271,7 +274,7 @@ const PropertyDetails: React.FC = () => {
                         {format(new Date(log.createdAt), 'MMM d, yyyy HH:mm')}
                       </span>
                       <span className="flex items-center">
-                        <UserIcon className="w-3 h-3 mr-1" />
+                        <User className="w-3 h-3 mr-1" />
                         User ID: {log.userId.substring(0, 8)}
                       </span>
                     </div>
