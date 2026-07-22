@@ -19,7 +19,7 @@ import { cn } from '../lib/utils';
 
 const GeocodingManagement: React.FC = () => {
   const navigate = useNavigate();
-  const [queue, setQueue] = useState<GeocodeJob[]>([]);
+  const [jobs, setJobs] = useState<GeocodeJob[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -104,7 +104,7 @@ const GeocodingManagement: React.FC = () => {
             <AlertCircle className="w-5 h-5" />
             <span className="text-[10px] font-black uppercase tracking-widest">Retrying</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{jobs.filter(j => j.attempts > 0).length}</p>
+          <p className="text-2xl font-bold text-gray-900">{jobs.filter((j: GeocodeJob) => j.attempts > 0).length}</p>
           <p className="text-xs text-gray-500 mt-1">Multiple lookup attempts made</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -133,7 +133,7 @@ const GeocodingManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {jobs.map((job) => (
+              {jobs.map((job: GeocodeJob) => (
                 <tr key={job.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
