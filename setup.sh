@@ -20,6 +20,18 @@ if [ ! -f .env ]; then
         sed -i "s/generate_a_strong_random_string_here/$RANDOM_SECRET/" .env
         echo "Generated a random JWT_SECRET for you."
     fi
+
+    echo "--- Geocoding Configuration ---"
+    echo "Nominatim can be heavy (50GB+ for large regions)."
+    read -p "Do you want to use a specific country extract (e.g., Luxembourg)? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        read -p "Enter Geofabrik PBF URL (default is Luxembourg): " PBF_URL
+        if [ ! -z "$PBF_URL" ]; then
+            sed -i "s|https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf|$PBF_URL|" .env
+            echo "Updated PBF_URL to $PBF_URL"
+        fi
+    fi
     
     echo "IMPORTANT: Please edit the .env file and set your production passwords and DOMAIN_URL."
     echo "Once you have updated .env, run this script again."

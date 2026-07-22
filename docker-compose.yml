@@ -62,6 +62,9 @@ services:
     restart: always
     environment:
       - NOMINATIM_PASSWORD=${NOMINATIM_PASSWORD:-proptrack_password}
+      - PBF_URL=${NOMINATIM_PBF_URL:-https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf}
+      - IMPORT_STYLE=${NOMINATIM_IMPORT_STYLE:-address}
+      - NOMINATIM_THREADS=${NOMINATIM_THREADS:-2}
     volumes:
       - nominatim_data:/var/lib/postgresql/data
 
