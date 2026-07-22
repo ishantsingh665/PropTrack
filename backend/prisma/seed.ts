@@ -1,8 +1,28 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // 1. Create Default Admin
+  const adminEmail = 'admin@proptrack.local';
+  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
+
+  if (!existingAdmin) {
+    const passwordHash = await bcrypt.hash('password123', 10);
+    await prisma.user.create({
+      data: {
+        id: '00000000-0000-0000-0000-000000000001',
+        email: adminEmail,
+        passwordHash,
+        name: 'System Administrator',
+        role: 'ADMIN',
+      },
+    });
+    console.log('Admin user created: admin@proptrack.local / password123');
+  }
+
+  // 2. Property Types
   const types = [
     {
       name: 'Residential',

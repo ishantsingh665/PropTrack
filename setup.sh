@@ -67,7 +67,7 @@ docker-compose exec backend npx prisma db push
 read -p "Do you want to seed the database with initial property types? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    docker-compose exec backend npm run prisma db seed
+    docker-compose exec backend npx prisma db seed
 fi
 
 echo "--- Setup Complete! ---"
