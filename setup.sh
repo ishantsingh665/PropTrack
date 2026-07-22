@@ -57,18 +57,13 @@ fi
 echo "Building and starting Docker containers..."
 docker-compose up -d --build
 
-# 4. Wait for Database
-echo "Waiting for PostgreSQL to be ready..."
-until docker-compose exec postgres pg_isready -U $(grep POSTGRES_USER .env | cut -d '=' -f2); do
-  echo "Database is unavailable - sleeping"
-  sleep 2
-done
-
-# 5. Run Migrations
+# 4. Run Migrations
 echo "Running database migrations..."
+# Give the backend a few seconds to start up
+sleep 5
 docker-compose exec backend npx prisma db push
 
-# 6. Seed (Optional)
+# 5. Seed (Optional)
 read -p "Do you want to seed the database with initial property types? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
