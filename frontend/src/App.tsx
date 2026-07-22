@@ -36,20 +36,18 @@ function App() {
         
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
-            <Route element={<Suspense fallback={<LoadingFallback />}>}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/companies" element={<Companies />} />
-              <Route path="/companies/:id" element={<CompanyDetails />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/properties/:id" element={<PropertyDetails />} />
-              <Route path="/transfers" element={<Transfers />} />
-              <Route path="/duplicates" element={<Duplicates />} />
-              <Route path="/import" element={<BulkImport />} />
-              <Route path="/audit" element={<AuditLog />} />
-              <Route path="/settings/types" element={<PropertyTypeManager />} />
-              <Route path="/settings/users" element={<UserManagement />} />
-              <Route path="/settings/geocoding" element={<GeocodingManagement />} />
-            </Route>
+            <Route path="/" element={<Suspense fallback={<LoadingFallback />}><Dashboard /></Suspense>} />
+            <Route path="/companies" element={<Suspense fallback={<LoadingFallback />}><Companies /></Suspense>} />
+            <Route path="/companies/:id" element={<Suspense fallback={<LoadingFallback />}><CompanyDetails /></Suspense>} />
+            <Route path="/properties" element={<Suspense fallback={<LoadingFallback />}><Properties /></Suspense>} />
+            <Route path="/properties/:id" element={<Suspense fallback={<LoadingFallback />}><PropertyDetails /></Suspense>} />
+            <Route path="/transfers" element={<Suspense fallback={<LoadingFallback />}><Transfers /></Suspense>} />
+            <Route path="/duplicates" element={<Suspense fallback={<LoadingFallback />}><Duplicates /></Suspense>} />
+            <Route path="/import" element={<Suspense fallback={<LoadingFallback />}><BulkImport /></Suspense>} />
+            <Route path="/audit" element={<Suspense fallback={<LoadingFallback />}><AuditLog /></Suspense>} />
+            <Route path="/settings/types" element={<Suspense fallback={<LoadingFallback />}><PropertyTypeManager /></Suspense>} />
+            <Route path="/settings/users" element={<Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense>} />
+            <Route path="/settings/geocoding" element={<Suspense fallback={<LoadingFallback />}><GeocodingManagement /></Suspense>} />
           </Route>
         </Route>
       </Routes>
