@@ -5,12 +5,16 @@ import { v4 as uuidv4 } from 'uuid';
 export class MinioService {
   private client: Minio.Client;
   private bucket: string;
+  private internalEndpoint: string;
 
   constructor() {
     const endPoint = process.env.MINIO_ENDPOINT || 'localhost';
     const useSSL = endPoint.startsWith('https');
+    const protocol = useSSL ? 'https:' : 'http:';
     const host = endPoint.replace(/^https?:\/\//, '').split(':')[0];
     const port = parseInt(endPoint.split(':')[2] || (useSSL ? '443' : '9000'));
+
+    this.internalEndpoint = `${protocol}//${host}:${port}`;
 
     this.client = new Minio.Client({
       endPoint: host,
@@ -58,8 +62,7 @@ export class MinioService {
     
     // If a public endpoint is defined, replace the internal one in the generated URL
     if (process.env.MINIO_PUBLIC_ENDPOINT) {
-      const internalEndpoint = `${this.client.protocol}//${this.client.host}:${this.client.port}`;
-      return url.replace(internalEndpoint, process.env.MINIO_PUBLIC_ENDPOINT);
+      return url.replace(this.internalEndpoint, process.env.MINIO_PUBLIC_ENDPOINT);
     }
     
     return url;

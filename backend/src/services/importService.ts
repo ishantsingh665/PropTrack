@@ -105,7 +105,7 @@ export class ImportService {
         where: { id: jobId },
         data: {
           status: errors.length === rows.length ? 'failed' : 'completed',
-          errorLog: errors.length > 0 ? errors : null,
+          errorLog: (errors.length > 0 ? errors : null) as any,
         },
       });
 

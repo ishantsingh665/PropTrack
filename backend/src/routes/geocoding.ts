@@ -5,11 +5,6 @@ const geocodeRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
   // List Geocoding Queue (Admin/Editor Only)
   server.get('/queue', { preHandler: [server.authenticate, roleGuard(['ADMIN', 'EDITOR'])] }, async (request: any, reply) => {
     const queue = await server.prisma.geocodeQueue.findMany({
-      include: {
-        // We can't directly include property because it's not a formal relation in schema.prisma 
-        // (the field is propertyId but no @relation was defined in the snippet I saw earlier).
-        // Let's check the schema again or just manually join if needed.
-      },
       orderBy: { nextRunAt: 'asc' }
     });
 

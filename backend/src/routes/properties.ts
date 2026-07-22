@@ -148,7 +148,7 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
     const gfaSqft = gfaInputValue && gfaInputUnit ? convertToSqft(gfaInputValue, gfaInputUnit) : null;
     const addressNormalized = normalizeAddress(addressLatin || addressLine1);
 
-    const { latitude, longitude, logEntry } = request.body;
+    const { latitude, longitude } = request.body;
     const isManual = latitude !== undefined && longitude !== undefined;
 
     const oldProperty = await server.prisma.property.findUnique({
