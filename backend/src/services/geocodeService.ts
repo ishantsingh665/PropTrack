@@ -45,6 +45,16 @@ export class GeocodeService {
       return;
     }
 
+    if (!process.env.NOMINATIM_URL) {
+      console.warn('Geocoding is disabled. Skipping property:', property.id);
+      await this.prisma.property.update({
+        where: { id: property.id },
+        data: { geocodeStatus: 'failed' },
+      });
+      await this.prisma.geocodeQueue.delete({ where: { id: job.id } });
+      return;
+    }
+
     try {
       const query = new URLSearchParams({
         street: property.addressLine1,
