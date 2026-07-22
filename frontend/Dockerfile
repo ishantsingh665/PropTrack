@@ -9,12 +9,16 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Runtime stage - using Nginx to serve the build
-FROM nginx:alpine
+# Runtime stage - using a simple node server instead of Nginx
+FROM node:20-alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
 
-EXPOSE 80
+RUN npm install -g serve
 
-CMD ["nginx", "-g", "daemon off;"]
+COPY --from=builder /app/dist ./dist
+
+# Use a non-standard port to avoid conflict with host Nginx
+EXPOSE 5173
+
+CMD ["serve", "-s", "dist", "-l", "5173"]

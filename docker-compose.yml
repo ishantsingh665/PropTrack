@@ -6,6 +6,8 @@ services:
     restart: always
     mem_limit: 150m
     memswap_limit: 300m
+    ports:
+      - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://betahobby_admin:Fasting-Geography-Dating8-Bridged@postgres:5432/proptrack
       - JWT_SECRET=${JWT_SECRET}
@@ -35,7 +37,7 @@ services:
     mem_limit: 30m
     memswap_limit: 60m
     ports:
-      - "80:80"
+      - "5173:5173"
     depends_on:
       - backend
     networks:
