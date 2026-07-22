@@ -1,7 +1,7 @@
 #!/bin/bash
-# PropTrack Autosetup Script
+# PropTrack Production Setup Script
 
-echo "--- Starting PropTrack Autosetup ---"
+echo "--- Starting PropTrack Production Setup ---"
 
 # 1. Check for docker-compose
 if ! command -v docker-compose &> /dev/null; then
@@ -13,18 +13,28 @@ fi
 if [ ! -f .env ]; then
     echo "Creating .env from .env.example..."
     cp .env.example .env
-    echo "Please edit the generated .env file with your production credentials."
+    
+    # Generate a random JWT_SECRET if openssl is available
+    if command -v openssl &> /dev/null; then
+        RANDOM_SECRET=$(openssl rand -base64 32)
+        sed -i "s/generate_a_strong_random_string_here/$RANDOM_SECRET/" .env
+        echo "Generated a random JWT_SECRET for you."
+    fi
+    
+    echo "IMPORTANT: Please edit the .env file and set your production passwords and DOMAIN_URL."
+    echo "Once you have updated .env, run this script again."
+    exit 0
 else
     echo "Using existing .env file."
 fi
 
-# 3. Start Infrastructure
-echo "Starting Docker containers..."
-docker-compose up -d
+# 3. Build and Start
+echo "Building and starting Docker containers..."
+docker-compose up -d --build
 
 # 4. Wait for Database
 echo "Waiting for PostgreSQL to be ready..."
-until docker-compose exec postgres pg_isready -U postgres; do
+until docker-compose exec postgres pg_isready -U $(grep POSTGRES_USER .env | cut -d '=' -f2); do
   echo "Database is unavailable - sleeping"
   sleep 2
 done
@@ -33,6 +43,12 @@ done
 echo "Running database migrations..."
 docker-compose exec backend npx prisma db push
 
+# 6. Seed (Optional)
+read -p "Do you want to seed the database with initial property types? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    docker-compose exec backend npm run prisma db seed
+fi
+
 echo "--- Setup Complete! ---"
-echo "Backend running at: http://localhost:3000"
-echo "Frontend running at: http://localhost:5173"
+echo "Your application should be available at: $(grep DOMAIN_URL .env | cut -d '=' -f2)"

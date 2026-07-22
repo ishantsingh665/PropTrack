@@ -52,9 +52,17 @@ export class MinioService {
   }
 
   async getDownloadUrl(storagePath: string, originalFilename: string) {
-    return await this.client.presignedGetObject(this.bucket, storagePath, 60, {
+    const url = await this.client.presignedGetObject(this.bucket, storagePath, 3600, {
       'response-content-disposition': `attachment; filename="${originalFilename}"`,
     });
+    
+    // If a public endpoint is defined, replace the internal one in the generated URL
+    if (process.env.MINIO_PUBLIC_ENDPOINT) {
+      const internalEndpoint = `${this.client.protocol}//${this.client.host}:${this.client.port}`;
+      return url.replace(internalEndpoint, process.env.MINIO_PUBLIC_ENDPOINT);
+    }
+    
+    return url;
   }
 
   async deleteFile(storagePath: string) {
