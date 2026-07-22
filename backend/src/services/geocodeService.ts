@@ -32,6 +32,7 @@ export class GeocodeService {
 
     for (const job of jobs) {
       await this.geocodeProperty(job);
+      await new Promise(resolve => setTimeout(resolve, 1100)); // OSM rate limit: 1 req/sec
     }
   }
 
@@ -65,7 +66,7 @@ export class GeocodeService {
       });
 
       const response = await fetch(`${this.nominatimUrl}/search?${query.toString()}`, {
-        headers: { 'User-Agent': 'PropTrack/1.0' },
+        headers: { 'User-Agent': 'PropTrack/1.0 (proptrack.betahobby.dpdns.org; contact@yourdomain.com)' },
       });
 
       if (!response.ok) {

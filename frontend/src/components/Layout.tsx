@@ -21,13 +21,7 @@ import CompanyForm from './CompanyForm';
 import PropertyForm from './PropertyForm';
 import TransferForm from './TransferForm';
 import Modal from './Modal';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-/** Utility for cleaner tailwind classes */
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();

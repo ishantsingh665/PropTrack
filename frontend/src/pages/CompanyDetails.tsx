@@ -19,12 +19,7 @@ import { getCompany } from '../api/companies';
 import { getProperties } from '../api/properties';
 import CompanyNotes from '../components/CompanyNotes';
 import { format } from 'date-fns';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const CompanyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();

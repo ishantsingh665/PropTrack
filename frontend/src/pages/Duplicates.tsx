@@ -19,12 +19,7 @@ import {
   mergeDuplicates,
   DuplicatePair 
 } from '../api/duplicates';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const Duplicates: React.FC = () => {
   const [pairs, setPairs] = useState<DuplicatePair[]>([]);

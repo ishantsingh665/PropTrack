@@ -34,12 +34,7 @@ import {
   Cell
 } from 'recharts';
 import { format } from 'date-fns';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const Dashboard: React.FC = () => {
   const [companies, setCompanies] = useState<any[]>([]);

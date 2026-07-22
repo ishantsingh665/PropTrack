@@ -25,12 +25,7 @@ import {
   Attachment 
 } from '../api/notes';
 import { format } from 'date-fns';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 interface CompanyNotesProps {
   companyId: string;

@@ -15,12 +15,7 @@ import {
 import { getAuditLogs, AuditLogEntry, AuditLogFilters } from '../api/audit';
 import { getUsers, User as SystemUser } from '../api/users';
 import { format } from 'date-fns';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const AuditLog: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);

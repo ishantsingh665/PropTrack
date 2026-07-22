@@ -18,65 +18,59 @@ export class SnapshotService {
 
   /**
    * Computes and saves snapshots for all companies for a given month.
+   * Optimized to avoid N+1 queries.
    */
   async takeSnapshot(month: string) {
-    // 1. Get all companies
     const companies = await this.prisma.company.findMany({
       where: { deletedAt: null }
     });
 
-    const snapshots = [];
+    // ONE query for all active stakes across all companies
+    const allActiveStakes = await this.prisma.propertyCompany.findMany({
+      where: {
+        status: 'active',
+        validTo: null,
+        property: { deletedAt: null }
+      },
+      include: { property: true }
+    });
 
-    for (const company of companies) {
-      // 2. Compute analytics for this company
-      // Active stakes for this company that were valid during this month
-      // For simplicity, we take CURRENT active stakes. 
-      // In a real system, you'd look at the validFrom/validTo overlap with the month.
-      
-      const activeStakes = await this.prisma.propertyCompany.findMany({
-        where: {
-          companyId: company.id,
-          status: 'active',
-          validTo: null,
-          property: { deletedAt: null }
-        },
-        include: {
-          property: true
-        }
-      });
-
-      const propertyCount = activeStakes.length;
-      const totalGfaSqft = activeStakes.reduce((sum, stake) => sum + (stake.property.gfaSqft || 0), 0);
-      const activeStakeCount = activeStakes.length;
-
-      // 3. Upsert snapshot
-      const snapshot = await this.prisma.companyMonthlySnapshot.upsert({
-        where: {
-          companyId_month: {
-            companyId: company.id,
-            month: month
-          }
-        },
-        update: {
-          propertyCount,
-          totalGfaSqft,
-          activeStakeCount,
-          data: { generatedAt: new Date().toISOString() }
-        },
-        create: {
-          companyId: company.id,
-          month: month,
-          propertyCount,
-          totalGfaSqft,
-          activeStakeCount,
-          data: { generatedAt: new Date().toISOString() }
-        }
-      });
-
-      snapshots.push(snapshot);
+    // Group stakes by companyId in memory
+    const stakesByCompany = new Map<string, typeof allActiveStakes>();
+    for (const stake of allActiveStakes) {
+      if (!stakesByCompany.has(stake.companyId)) {
+        stakesByCompany.set(stake.companyId, []);
+      }
+      stakesByCompany.get(stake.companyId)!.push(stake);
     }
 
-    // 4. Update system setting
+    // Build all snapshot upserts
+    const snapshotData = companies.map(company => {
+      const activeStakes = stakesByCompany.get(company.id) || [];
+      const propertyCount = activeStakes.length;
+      const totalGfaSqft = activeStakes.reduce((sum, s) => sum + (s.property.gfaSqft || 0), 0);
+
+      return {
+        companyId: company.id,
+        month,
+        propertyCount,
+        totalGfaSqft,
+        activeStakeCount: activeStakes.length,
+        data: { generatedAt: new Date().toISOString() }
+      };
+    });
+
+    // Upsert all snapshots in a single transaction
+    const snapshots = await this.prisma.$transaction(
+      snapshotData.map(data =>
+        this.prisma.companyMonthlySnapshot.upsert({
+          where: { companyId_month: { companyId: data.companyId, month } },
+          update: { ...data },
+          create: { ...data }
+        })
+      )
+    );
+
     await this.prisma.systemSetting.upsert({
       where: { key: 'last_snapshot_month' },
       update: { value: month },

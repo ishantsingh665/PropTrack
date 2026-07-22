@@ -5,13 +5,7 @@ import { getCompanies, createCompany, updateCompany, deleteCompany } from '../ap
 import Modal from '../components/Modal';
 import CompanyForm from '../components/CompanyForm';
 import CompanyNotes from '../components/CompanyNotes';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-/** Utility for cleaner tailwind classes */
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const Companies: React.FC = () => {
   const [companies, setCompanies] = useState<any[]>([]);

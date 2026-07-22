@@ -13,12 +13,7 @@ import {
   Download
 } from 'lucide-react';
 import { uploadCsv, getImportStatus, ImportJob } from '../api/import';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const BulkImport: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);

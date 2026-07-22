@@ -22,23 +22,28 @@ if [ ! -f .env ]; then
     fi
 
     echo "--- Geocoding Configuration ---"
-    echo "Nominatim can be heavy (50GB+ for large regions)."
-    read -p "Do you want to enable the local geocoding service? (y/n) " -n 1 -r
+    echo "By default, PropTrack uses the Public OpenStreetMap API (nominatim.openstreetmap.org)."
+    read -p "Do you want to use the Public API? (y/n) " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        read -p "Do you want to use a specific country extract (e.g., Luxembourg)? (y/n) " -n 1 -r
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Local Nominatim setup selected."
+        echo "Note: Local Nominatim can be heavy (50GB+ for large regions)."
+        read -p "Do you want to enable the local geocoding service? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sed -i "s|https://nominatim.openstreetmap.org|http://nominatim:8080|" .env
             read -p "Enter Geofabrik PBF URL (default is Luxembourg): " PBF_URL
             if [ ! -z "$PBF_URL" ]; then
                 sed -i "s|https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf|$PBF_URL|" .env
                 echo "Updated PBF_URL to $PBF_URL"
             fi
+        else
+            # Disable geocoding in .env
+            sed -i 's/^NOMINATIM_URL=/# NOMINATIM_URL=/' .env
+            echo "Geocoding service disabled in .env"
         fi
     else
-        # Disable geocoding in .env
-        sed -i 's/^NOMINATIM_URL=/# NOMINATIM_URL=/' .env
-        echo "Geocoding service disabled in .env"
+        echo "Using Public OpenStreetMap API."
     fi
     
     echo "IMPORTANT: Please edit the .env file and set your production passwords and DOMAIN_URL."

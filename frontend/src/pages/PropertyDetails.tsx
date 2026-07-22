@@ -27,12 +27,7 @@ import {
   updatePropertyStatus
 } from '../api/properties';
 import { format } from 'date-fns';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();

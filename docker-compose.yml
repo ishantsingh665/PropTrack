@@ -23,7 +23,7 @@ services:
       - MINIO_PASSWORD=${MINIO_ROOT_PASSWORD:-proptrack_password}
       - MINIO_BUCKET=${MINIO_BUCKET:-proptrack}
       - FILE_SIZE_LIMIT_MB=25
-      - NOMINATIM_URL=http://nominatim:8080
+      - NOMINATIM_URL=https://nominatim.openstreetmap.org
       - GEOCODE_MAX_ATTEMPTS=3
       - GEOCODE_RETRY_INTERVAL_SECONDS=60
       - PORT=3000
@@ -57,18 +57,6 @@ services:
     volumes:
       - minio_data:/data
 
-  nominatim:
-    image: mediagis/nominatim:4.2
-    restart: always
-    environment:
-      - NOMINATIM_PASSWORD=${NOMINATIM_PASSWORD:-proptrack_password}
-      - PBF_URL=${NOMINATIM_PBF_URL:-https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf}
-      - IMPORT_STYLE=${NOMINATIM_IMPORT_STYLE:-address}
-      - NOMINATIM_THREADS=${NOMINATIM_THREADS:-2}
-    volumes:
-      - nominatim_data:/var/lib/postgresql/data
-
 volumes:
   postgres_data:
   minio_data:
-  nominatim_data:

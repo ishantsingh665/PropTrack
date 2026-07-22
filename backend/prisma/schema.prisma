@@ -104,6 +104,10 @@ model Property {
   // For duplicates (either as the first or second in the pair)
   duplicatePairs1   DuplicatePair[] @relation("Property1")
   duplicatePairs2   DuplicatePair[] @relation("Property2")
+
+  @@index([geocodeStatus])               // post-import geocode queue population
+  @@index([addressNormalized, city, countryCode]) // duplicate engine grouping
+  @@index([deletedAt])                   // soft-delete filters everywhere
 }
 
 enum OwnershipStatus {
@@ -128,6 +132,9 @@ model PropertyCompany {
   company      Company         @relation(fields: [companyId], references: [id])
   statusLogs   PropertyStatusLog[]
   transferLegs PropertyTransferLeg[]
+
+  @@index([companyId, status, validTo])  // dashboard + snapshot queries
+  @@index([propertyId])                  // property detail lookups
 }
 
 model PropertyStatusLog {
@@ -188,6 +195,9 @@ model DuplicatePair {
 
   property1   Property        @relation("Property1", fields: [property1Id], references: [id])
   property2   Property        @relation("Property2", fields: [property2Id], references: [id])
+
+  @@index([property1Id, property2Id])    // pair existence checks
+  @@index([status])                      // frontend filters by status
 }
 
 model MergeLog {
@@ -262,6 +272,8 @@ model GeocodeQueue {
   lastError  String?
   nextRunAt  DateTime @default(now())
   createdAt  DateTime @default(now())
+
+  @@index([nextRunAt])                   // queue processor polling
 }
 
 model CompanyNote {

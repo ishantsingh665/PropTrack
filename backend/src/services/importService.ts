@@ -24,6 +24,7 @@ export class ImportService {
 
     const rows: any[] = [];
     const errors: any[] = [];
+    const newPropertyIds: string[] = [];
     let successCount = 0;
 
     try {
@@ -77,6 +78,8 @@ export class ImportService {
                 },
               });
 
+              newPropertyIds.push(property.id);
+
               // If companyId is provided, create ownership stake
               const companyId = row.companyId;
               if (companyId) {
@@ -110,17 +113,13 @@ export class ImportService {
       if (successCount > 0) {
         // 1. Trigger Geocoding for newly created properties
         const geocodeService = new GeocodeService(this.prisma);
-        const newProperties = await this.prisma.property.findMany({
-          where: { geocodeStatus: 'pending' },
-          select: { id: true }
-        });
-        for (const p of newProperties) {
-          await geocodeService.queueGeocoding(p.id);
+        for (const id of newPropertyIds) {
+          await geocodeService.queueGeocoding(id);
         }
 
-        // 2. Trigger Duplicate Scan
+        // 2. Trigger Duplicate Scan (Scoped)
         const duplicateEngine = new DuplicateEngine(this.prisma);
-        await duplicateEngine.scanForDuplicates();
+        await duplicateEngine.scanForDuplicates(newPropertyIds);
       }
 
     } catch (err: any) {

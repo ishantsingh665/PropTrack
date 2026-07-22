@@ -19,12 +19,7 @@ import {
   togglePropertyTypeActive,
   PropertyType 
 } from '../api/propertyTypes';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../lib/utils';
 
 const PropertyTypeManager: React.FC = () => {
   const [types, setTypes] = useState<PropertyType[]>([]);
