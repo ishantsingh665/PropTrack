@@ -74,7 +74,7 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
   });
 
   // Create Property
-  server.post('/', { preHandler: [server.authenticate, roleGuard(['ADMIN', 'EDITOR']), snapshotGate] }, async (request: any, reply) => {
+  server.post('/', { preHandler: [server.authenticate, roleGuard(['ADMIN', 'EDITOR'])] }, async (request: any, reply) => {
     const {
       parentId,
       propertyLevel,
