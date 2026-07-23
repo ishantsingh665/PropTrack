@@ -37,6 +37,7 @@ const SnapshotDetails: React.FC = () => {
   const [editingEntity, setEditingEntity] = useState<{ type: 'company' | 'property', id: string } | null>(null);
   const [editValues, setEditValues] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (id) fetchDetail();
@@ -53,6 +54,13 @@ const SnapshotDetails: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const filteredCompanies = snapshot?.companies.filter(c => 
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.isin?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.snapshotCompanyUid.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.originalCompanyId.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   const toggleCompany = (companyUid: string) => {
     const next = new Set(expandedCompanies);
@@ -190,6 +198,8 @@ const SnapshotDetails: React.FC = () => {
               type="text" 
               placeholder="Filter list..." 
               className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
@@ -209,7 +219,7 @@ const SnapshotDetails: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {snapshot.companies.map((company) => (
+              {filteredCompanies.map((company) => (
                 <React.Fragment key={company.snapshotCompanyUid}>
                   <tr className={cn(
                     "hover:bg-gray-50 transition-colors group",
@@ -231,7 +241,7 @@ const SnapshotDetails: React.FC = () => {
                           <span className="w-16">LIVE_ID:</span>
                           <span>{company.originalCompanyId.substring(0, 8)}...</span>
                           <button onClick={() => copyToClipboard(company.originalCompanyId)} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-3 h-3" /></button>
-                          <Link to={`/companies`} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500"><ExternalLink className="w-3 h-3" /></Link>
+                          <Link to={`/companies/${company.originalCompanyId}`} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-700" title="View Live Company"><ExternalLink className="w-3 h-3" /></Link>
                         </div>
                       </div>
                     </td>
@@ -337,6 +347,7 @@ const SnapshotDetails: React.FC = () => {
                                         <span className="w-12">LIVE_ID:</span>
                                         <span>{property.originalPropertyId.substring(0, 8)}...</span>
                                         <button onClick={() => copyToClipboard(property.originalPropertyId)} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-2.5 h-2.5" /></button>
+                                        <Link to={`/properties/${property.originalPropertyId}`} className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-700" title="View Live Property"><ExternalLink className="w-2.5 h-2.5" /></Link>
                                       </div>
                                     </div>
                                   </td>

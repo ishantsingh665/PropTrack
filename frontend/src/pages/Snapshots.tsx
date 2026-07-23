@@ -323,7 +323,7 @@ const Snapshots: React.FC = () => {
               <div className="text-[10px] text-gray-500 uppercase font-bold">Properties</div>
             </div>
             <div>
-              <div className="text-xl font-bold text-gray-900">{(createdSnapshot?.totalGfaSqft || 0 / 1000).toFixed(0)}k</div>
+              <div className="text-xl font-bold text-gray-900">{((createdSnapshot?.totalGfaSqft || 0) / 1000).toFixed(0)}k</div>
               <div className="text-[10px] text-gray-500 uppercase font-bold">Total GFA</div>
             </div>
           </div>

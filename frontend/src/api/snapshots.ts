@@ -25,6 +25,7 @@ export interface SnapshotCompany {
   reportPropertyCount: number | null;
   totalPropertyCount: number;
   totalGfaSqft: number;
+  notes: string | null;
   properties: SnapshotProperty[];
 }
 
@@ -36,6 +37,7 @@ export interface SnapshotProperty {
   city: string;
   gfaSqft: number | null;
   propertyLevel: string;
+  notes: string | null;
 }
 
 export interface SnapshotPreview {
