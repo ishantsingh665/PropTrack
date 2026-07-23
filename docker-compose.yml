@@ -4,12 +4,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
-    mem_limit: 256m
+    mem_limit: 150m
+    memswap_limit: 300m
     ports:
       - "3001:3001"
-    volumes:
-      - ./backend/src:/app/src
-      - ./backend/prisma:/app/prisma
     environment:
       - DATABASE_URL=postgresql://betahobby_admin:Fasting-Geography-Dating8-Bridged@postgres:5432/proptrack
       - JWT_SECRET=${JWT_SECRET}
@@ -23,9 +21,10 @@ services:
       - GEOCODE_MAX_ATTEMPTS=3
       - GEOCODE_RETRY_INTERVAL_SECONDS=60
       - PORT=3001
-      - NODE_ENV=development
+      - NODE_ENV=production
       - FRONTEND_URL=${DOMAIN_URL}
       - MINIO_PUBLIC_ENDPOINT=${DOMAIN_URL}/minio
+    depends_on: []
     networks:
       - postgres-net
       - default
@@ -35,16 +34,16 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     restart: always
-    mem_limit: 256m
+    mem_limit: 30m
+    memswap_limit: 60m
     ports:
       - "5173:5173"
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
     depends_on:
       - backend
     networks:
       - default
+
+volumes: {}
 
 networks:
   postgres-net:

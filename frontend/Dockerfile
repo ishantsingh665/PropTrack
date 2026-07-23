@@ -1,4 +1,5 @@
-FROM node:20-alpine
+# Build stage
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -6,7 +7,18 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+RUN npm run build
 
+# Runtime stage - using a simple node server instead of Nginx
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN npm install -g serve
+
+COPY --from=builder /app/dist ./dist
+
+# Use a non-standard port to avoid conflict with host Nginx
 EXPOSE 5173
 
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["serve", "-s", "dist", "-l", "5173"]
