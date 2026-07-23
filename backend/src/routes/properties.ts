@@ -94,7 +94,8 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
       return reply.status(400).send({ message: 'Parent building is required for units' });
     }
 
-    const gfaSqft = gfaInputValue && gfaInputUnit ? convertToSqft(gfaInputValue, gfaInputUnit) : null;
+    const gfaSqftRaw = gfaInputValue && gfaInputUnit ? convertToSqft(gfaInputValue, gfaInputUnit) : null;
+    const gfaSqft = gfaSqftRaw !== null ? parseFloat(gfaSqftRaw) : null;
     const addressNormalized = normalizeAddress(addressLatin || addressLine1);
 
     const { latitude, longitude } = request.body;
@@ -162,7 +163,8 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
       logEntry // Human readable entry for the building log
     } = request.body;
 
-    const gfaSqft = gfaInputValue && gfaInputUnit ? convertToSqft(gfaInputValue, gfaInputUnit) : null;
+    const gfaSqftRaw = gfaInputValue && gfaInputUnit ? convertToSqft(gfaInputValue, gfaInputUnit) : null;
+    const gfaSqft = gfaSqftRaw !== null ? parseFloat(gfaSqftRaw) : null;
     const addressNormalized = normalizeAddress(addressLatin || addressLine1);
 
     const { latitude, longitude } = request.body;
