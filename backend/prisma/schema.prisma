@@ -30,6 +30,7 @@ model User {
   deletedAt          DateTime?
 
   auditLogs          AuditLog[]
+  snapshots          Snapshot[]
 }
 
 model Company {
@@ -41,9 +42,21 @@ model Company {
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
 
+  snapshotsEnabled    Boolean  @default(true)   // controls if this company is included in snapshots
+  indexListed         Boolean  @default(false)  // controls if company appears in index
+  isin                String?  @unique
+  status              CompanyStatus @default(active)
+  reportPropertyCount Int?
+
   properties         PropertyCompany[]
   notes              CompanyNote[]
-  snapshots          CompanyMonthlySnapshot[]
+  snapshotCompanies   SnapshotCompany[]
+  companySnapshots    CompanyMonthlySnapshot[] // existing relation
+}
+
+enum CompanyStatus {
+  active
+  inactive
 }
 
 model PropertyType {
@@ -100,6 +113,8 @@ model Property {
   companies         PropertyCompany[]
   changeLogs        PropertyChangeLog[]
   scrapeLogs        PropertyScrapeLog[]
+
+  snapshotProperties SnapshotProperty[]
 
   // For duplicates (either as the first or second in the pair)
   duplicatePairs1   DuplicatePair[] @relation("Property1")
@@ -321,4 +336,83 @@ model SystemSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// Parent snapshot record — one per snapshot event
+model Snapshot {
+  id              String   @id @default(uuid())
+  snapshotNumber  Int      @unique @default(autoincrement()) // assigned sequentially e.g. 1, 2, 3
+  name            String   @unique                           // e.g. "December 2024"
+  year            Int                                        // e.g. 2024
+  createdAt       DateTime @default(now())
+  createdBy       String                                     // userId
+  creator         User     @relation(fields: [createdBy], references: [id])
+
+  companySnapshots  SnapshotCompany[]
+  propertySnapshots SnapshotProperty[]
+
+  @@index([year])
+  @@index([snapshotNumber])
+}
+
+// One record per company included in the snapshot
+model SnapshotCompany {
+  id              String   @id @default(uuid())
+  snapshotId      String
+  snapshot        Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  companyId       String                          // reference to original Company.id
+  company         Company  @relation(fields: [companyId], references: [id])
+
+  // Snapshot-specific unique ID for this company in this snapshot
+  snapshotCompanyUid  String @unique @default(uuid())
+
+  // Delta overrides — only non-null fields override the live value at read time
+  nameOverride          String?
+  isinOverride          String?
+  statusOverride        String?
+  reportPropertyCountOverride Int?
+  notesOverride         String?
+
+  // Computed totals captured at snapshot time (denormalized for performance)
+  totalPropertyCount    Int      @default(0)
+  totalGfaSqft          Float    @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  propertySnapshots SnapshotProperty[]
+
+  @@unique([snapshotId, companyId])
+  @@index([snapshotId])
+  @@index([companyId])
+}
+
+// One record per property included in the snapshot
+model SnapshotProperty {
+  id              String   @id @default(uuid())
+  snapshotId      String
+  snapshot        Snapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  propertyId      String                          // reference to original Property.id
+  property        Property @relation(fields: [propertyId], references: [id])
+  snapshotCompanyId String                        // which company this property belongs to in the snapshot
+  snapshotCompany SnapshotCompany @relation(fields: [snapshotCompanyId], references: [id])
+
+  // Snapshot-specific unique ID for this property in this snapshot
+  snapshotPropertyUid String @unique @default(uuid())
+
+  // Delta overrides — only non-null fields override the live value at read time
+  nameOverride          String?
+  addressLine1Override  String?
+  cityOverride          String?
+  gfaSqftOverride       Float?
+  propertyLevelOverride String?
+  notesOverride         String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([snapshotId, propertyId])
+  @@index([snapshotId])
+  @@index([propertyId])
+  @@index([snapshotCompanyId])
 }

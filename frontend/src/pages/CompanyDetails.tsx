@@ -13,7 +13,8 @@ import {
   TrendingUp,
   Globe,
   Briefcase,
-  AlertCircle
+  AlertCircle,
+  Copy
 } from 'lucide-react';
 import { getCompany } from '../api/companies';
 import { getProperties } from '../api/properties';
@@ -91,6 +92,17 @@ const CompanyDetails: React.FC = () => {
             <div className="flex items-center text-gray-500 mt-1">
               <Globe className="w-4 h-4 mr-1 text-gray-400" />
               <span className="text-sm font-medium">Reg: {company.registrationNumber || 'Not Provided'}</span>
+              <span className="mx-2 text-gray-300">•</span>
+              <div className="flex items-center text-xs font-mono text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded group/id relative cursor-pointer" title={company.id}>
+                <span className="font-bold mr-1.5 uppercase tracking-tighter">ID:</span>
+                <span>{company.id.substring(0, 8)}...</span>
+                <button 
+                  onClick={() => navigator.clipboard.writeText(company.id)}
+                  className="ml-1.5 opacity-0 group-hover/id:opacity-100 transition-opacity p-0.5 hover:bg-blue-100 rounded"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+              </div>
               <span className="mx-2 text-gray-300">•</span>
               <Calendar className="w-4 h-4 mr-1 text-gray-400" />
               <span className="text-sm font-medium text-gray-400">JOINED {format(new Date(company.createdAt), 'MMM yyyy')}</span>

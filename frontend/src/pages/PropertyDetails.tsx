@@ -149,6 +149,17 @@ const PropertyDetails: React.FC = () => {
             <div className="flex items-center text-gray-500 mt-1">
               <MapPin className="w-4 h-4 mr-1" />
               <span className="text-sm font-medium">{property.addressLine1}, {property.city}, {property.countryCode}</span>
+              <span className="mx-2 text-gray-300">•</span>
+              <div className="flex items-center text-xs font-mono text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded group/id relative cursor-pointer" title={property.id}>
+                <span className="font-bold mr-1.5 uppercase tracking-tighter">ID:</span>
+                <span>{property.id.substring(0, 8)}...</span>
+                <button 
+                  onClick={() => navigator.clipboard.writeText(property.id)}
+                  className="ml-1.5 opacity-0 group-hover/id:opacity-100 transition-opacity p-0.5 hover:bg-blue-100 rounded"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -17,6 +17,8 @@ const Transfers        = lazy(() => import('./pages/Transfers'));
 const BulkImport       = lazy(() => import('./pages/BulkImport'));
 const AuditLog         = lazy(() => import('./pages/AuditLog'));
 const Duplicates       = lazy(() => import('./pages/Duplicates'));
+const Snapshots        = lazy(() => import('./pages/Snapshots'));
+const SnapshotDetails  = lazy(() => import('./pages/SnapshotDetails'));
 const GeocodingManagement = lazy(() => import('./pages/GeocodingManagement'));
 const UserManagement   = lazy(() => import('./pages/UserManagement'));
 const PropertyTypeManager = lazy(() => import('./pages/PropertyTypeManager'));
@@ -43,6 +45,8 @@ function App() {
             <Route path="/properties/:id" element={<Suspense fallback={<LoadingFallback />}><PropertyDetails /></Suspense>} />
             <Route path="/transfers" element={<Suspense fallback={<LoadingFallback />}><Transfers /></Suspense>} />
             <Route path="/duplicates" element={<Suspense fallback={<LoadingFallback />}><Duplicates /></Suspense>} />
+            <Route path="/snapshots" element={<Suspense fallback={<LoadingFallback />}><Snapshots /></Suspense>} />
+            <Route path="/snapshots/:id" element={<Suspense fallback={<LoadingFallback />}><SnapshotDetails /></Suspense>} />
             <Route path="/import" element={<Suspense fallback={<LoadingFallback />}><BulkImport /></Suspense>} />
             <Route path="/audit" element={<Suspense fallback={<LoadingFallback />}><AuditLog /></Suspense>} />
             <Route path="/settings/types" element={<Suspense fallback={<LoadingFallback />}><PropertyTypeManager /></Suspense>} />

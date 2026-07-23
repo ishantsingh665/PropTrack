@@ -20,20 +20,26 @@ const prismaPlugin: FastifyPluginAsync = fp(async (server) => {
         async create({ model, args, query }) {
           const result: any = await query(args);
           const ctx = auditContext.getStore();
-          
+
           if (model !== 'AuditLog' && model !== 'MergeLog') {
+            // Remove sensitive fields from log
+            const logData = { ...result };
+            delete logData.passwordHash;
+
             await (basePrisma as any).auditLog.create({
               data: {
                 tableName: model,
                 recordId: result.id,
                 userId: ctx?.userId,
                 action: 'INSERT',
+                diff: logData, // Store initial state in diff field
                 changedAt: new Date(),
               }
             });
           }
           return result;
         },
+
         async update({ model, args, query }) {
           const ctx = auditContext.getStore();
           const modelName = model.charAt(0).toLowerCase() + model.slice(1);
