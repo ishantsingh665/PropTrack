@@ -6,6 +6,7 @@ import { getCompanies } from '../api/companies';
 import { getPropertyTypes } from '../api/propertyTypes';
 import Modal from '../components/Modal';
 import PropertyForm from '../components/PropertyForm';
+import Notification from '../components/Notification';
 import { cn } from '../lib/utils';
 
 const Properties: React.FC = () => {
@@ -14,6 +15,7 @@ const Properties: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
+  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   // Filters
   const [companies, setCompanies] = useState<any[]>([]);
@@ -62,24 +64,27 @@ const Properties: React.FC = () => {
   useEffect(() => {
     fetchProperties();
   }, [fetchProperties]);
-
-  const handleCreateOrUpdate = async (formData: any) => {
-    try {
-      if (editingProperty) {
-        await updateProperty(editingProperty.id, formData);
-      } else {
-        await createProperty(formData);
-      }
-      setIsModalOpen(false);
-      setEditingProperty(null);
-      fetchProperties();
-    } catch (error) {
-      console.error('Operation failed:', error);
-      alert('Failed to save property. Check if snapshot gate is open.');
+const handleCreateOrUpdate = async (formData: any) => {
+  setIsLoading(true);
+  try {
+    if (editingProperty) {
+      await updateProperty(editingProperty.id, formData);
+    } else {
+      await createProperty(formData);
     }
-  };
+    setIsModalOpen(false);
+    setEditingProperty(null);
+    fetchProperties();
+    setNotification({ message: 'Property saved successfully.', type: 'success' });
+  } catch (error: any) {
+    console.error('Operation failed:', error);
+    const errorMessage = error.response?.data?.message || 'An unexpected error occurred.';
+    setNotification({ message: `Failed to save property: ${errorMessage}`, type: 'error' });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-  const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this property?')) return;
     try {
       await deleteProperty(id);
@@ -101,6 +106,13 @@ const Properties: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {notification && (
+        <Notification 
+          message={notification.message} 
+          type={notification.type} 
+          onClose={() => setNotification(null)} 
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Properties</h1>
