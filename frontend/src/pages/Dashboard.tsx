@@ -163,6 +163,8 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
