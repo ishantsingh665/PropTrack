@@ -90,6 +90,30 @@ const SnapshotDetails: React.FC = () => {
     }
   };
 
+  const handleResetToLive = async (type: 'company' | 'property', entityUid: string) => {
+    if (!snapshot || !window.confirm('Reset this record to its live values? All snapshot overrides will be cleared.')) return;
+    setIsSaving(true);
+    try {
+      // Sending null for override fields clears them in the backend mapping
+      const resetData: any = type === 'company' 
+        ? { name: null, isin: null, status: null, reportPropertyCount: null, notes: null }
+        : { name: null, addressLine1: null, city: null, gfaSqft: null, propertyLevel: null, notes: null };
+
+      if (type === 'company') {
+        await updateSnapshotCompany(snapshot.id, entityUid, resetData);
+      } else {
+        await updateSnapshotProperty(snapshot.id, entityUid, resetData);
+      }
+      await fetchDetail();
+      setEditingEntity(null);
+    } catch (error) {
+      console.error('Reset failed:', error);
+      alert('Failed to reset to live values.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     // Could add a toast here
@@ -250,23 +274,35 @@ const SnapshotDetails: React.FC = () => {
                             disabled={isSaving}
                             onClick={handleSave}
                             className="p-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                            title="Save Changes"
                           >
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                           </button>
                           <button 
                             onClick={cancelEditing}
                             className="p-1.5 bg-gray-200 text-gray-600 rounded hover:bg-gray-300 transition-colors"
+                            title="Cancel"
                           >
                             <X className="w-4 h-4" />
                           </button>
                         </div>
                       ) : (
-                        <button 
-                          onClick={() => startEditing('company', company)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end space-x-1">
+                          <button 
+                            onClick={() => handleResetToLive('company', company.snapshotCompanyUid)}
+                            className="p-1.5 text-gray-300 hover:text-orange-600 hover:bg-orange-50 rounded transition-all"
+                            title="Reset to Live Values"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => startEditing('company', company)}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                            title="Edit Snapshot Override"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -329,23 +365,35 @@ const SnapshotDetails: React.FC = () => {
                                           disabled={isSaving}
                                           onClick={handleSave}
                                           className="p-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                          title="Save Changes"
                                         >
                                           {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                                         </button>
                                         <button 
                                           onClick={cancelEditing}
                                           className="p-1 bg-gray-200 text-gray-600 rounded hover:bg-gray-300 transition-colors"
+                                          title="Cancel"
                                         >
                                           <X className="w-3 h-3" />
                                         </button>
                                       </div>
                                     ) : (
-                                      <button 
-                                        onClick={() => startEditing('property', property)}
-                                        className="p-1 text-gray-300 hover:text-blue-600 transition-colors"
-                                      >
-                                        <Edit3 className="w-3.5 h-3.5" />
-                                      </button>
+                                      <div className="flex items-center justify-end space-x-1">
+                                        <button 
+                                          onClick={() => handleResetToLive('property', property.snapshotPropertyUid)}
+                                          className="p-1 text-gray-300 hover:text-orange-600 hover:bg-orange-50 rounded transition-all"
+                                          title="Reset to Live Values"
+                                        >
+                                          <RotateCcw className="w-3 h-3" />
+                                        </button>
+                                        <button 
+                                          onClick={() => startEditing('property', property)}
+                                          className="p-1 text-gray-300 hover:text-blue-600 transition-colors"
+                                          title="Edit Snapshot Override"
+                                        >
+                                          <Edit3 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
                                     )}
                                   </td>
                                 </tr>
