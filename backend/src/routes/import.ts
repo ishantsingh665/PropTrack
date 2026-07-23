@@ -6,6 +6,7 @@ import { ImportService } from '../services/importService.js';
 const importRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
   // Bulk Import CSV
   server.post('/', { preHandler: [server.authenticate, roleGuard(['ADMIN', 'EDITOR']), snapshotGate] }, async (request: any, reply) => {
+    const { companyId } = request.query;
     const data = await request.file();
     if (!data) {
       return reply.status(400).send({ message: 'No file uploaded' });
@@ -28,7 +29,7 @@ const importRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
 
     // Start processing in background
     const importService = new ImportService(server.prisma);
-    importService.processImport(job.id, csvData).catch(err => {
+    importService.processImport(job.id, csvData, companyId).catch(err => {
       server.log.error(`Import Job ${job.id} failed:`, err);
     });
 

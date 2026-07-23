@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Upload, 
   FileText, 
@@ -10,16 +11,36 @@ import {
   ArrowRight,
   Info,
   History,
-  Download
+  Download,
+  Building2,
+  ShieldCheck,
+  X
 } from 'lucide-react';
 import { uploadCsv, getImportStatus, ImportJob } from '../api/import';
+import { getCompany, Company } from '../api/companies';
+import Modal from '../components/Modal';
 import { cn } from '../lib/utils';
 
 const BulkImport: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const companyId = searchParams.get('companyId');
+
   const [file, setFile] = useState<File | null>(null);
+  const [targetCompany, setTargetCompany] = useState<Company | null>(null);
   const [currentJob, setCurrentJob] = useState<ImportJob | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [step, setStep] = useState<'upload' | 'processing' | 'result'>('upload');
+
+  // Preview States
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [previewStats, setPreviewData] = useState<{ count: number, totalGfa: number } | null>(null);
+
+  useEffect(() => {
+    if (companyId) {
+      getCompany(companyId).then(setTargetCompany).catch(console.error);
+    }
+  }, [companyId]);
 
   const pollStatus = useCallback(async (jobId: string) => {
     try {
@@ -37,15 +58,50 @@ const BulkImport: React.FC = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      
+      // Basic preview parse
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/);
+        const headers = lines[0].toLowerCase().split(',');
+        const gfaIdx = headers.findIndex(h => h.includes('gfa_value') || h.includes('gfa_val'));
+        
+        let count = 0;
+        let totalGfa = 0;
+        
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+          count++;
+          if (gfaIdx !== -1) {
+            const cols = lines[i].split(',');
+            const val = parseFloat(cols[gfaIdx]);
+            if (!isNaN(val)) totalGfa += val;
+          }
+        }
+        setPreviewData({ count, totalGfa });
+      };
+      reader.readAsText(selectedFile);
+    }
+  };
+
+  const handleStartImport = () => {
+    if (!file) return;
+    if (targetCompany) {
+      setIsConfirmModalOpen(true);
+    } else {
+      handleUpload();
     }
   };
 
   const handleUpload = async () => {
     if (!file) return;
+    setIsConfirmModalOpen(false);
     setIsUploading(true);
     try {
-      const { jobId } = await uploadCsv(file);
+      const { jobId } = await uploadCsv(file, companyId || undefined);
       setStep('processing');
       pollStatus(jobId);
     } catch (error: any) {
@@ -58,6 +114,27 @@ const BulkImport: React.FC = () => {
 
   const renderUpload = () => (
     <div className="space-y-6 max-w-2xl mx-auto">
+      {targetCompany && (
+        <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg leading-none">Scoped Upload Active</h3>
+              <p className="text-blue-100 text-xs mt-1">Target: <span className="font-bold">{targetCompany.name}</span></p>
+            </div>
+          </div>
+          <button 
+            onClick={() => navigate('/import')}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            title="Clear target company"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center">
         <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <Upload className="w-8 h-8 text-blue-600" />
@@ -85,7 +162,7 @@ const BulkImport: React.FC = () => {
                 <p className="text-sm font-bold text-gray-900">{file.name}</p>
                 <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
                 <button 
-                  onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                  onClick={(e) => { e.stopPropagation(); setFile(null); setPreviewData(null); }}
                   className="text-xs text-red-500 font-medium mt-2 hover:underline"
                 >
                   Remove file
@@ -101,12 +178,12 @@ const BulkImport: React.FC = () => {
         </div>
 
         <button
-          onClick={handleUpload}
+          onClick={handleStartImport}
           disabled={!file || isUploading}
-          className="mt-8 w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center"
+          className="mt-8 w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center shadow-lg shadow-blue-100"
         >
           {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <ArrowRight className="w-5 h-5 mr-2" />}
-          Start Import
+          {targetCompany ? 'Review & Ingest' : 'Start Import'}
         </button>
       </div>
 
@@ -116,10 +193,11 @@ const BulkImport: React.FC = () => {
         </h3>
         <ul className="mt-3 space-y-2 text-xs text-blue-700">
           <li>• <strong>name</strong> - Property display name</li>
-          <li>• <strong>address_line1</strong> - Street address (Swedish, Arabic, etc.)</li>
-          <li>• <strong>city</strong>, <strong>postal_code</strong>, <strong>country_code</strong> (ISO 2-letter)</li>
+          <li>• <strong>address_line1</strong> - Street address</li>
+          <li>• <strong>city</strong>, <strong>postal_code</strong>, <strong>country_code</strong></li>
           <li>• <strong>gfa_value</strong>, <strong>gfa_unit</strong> (sqft or sqm)</li>
-          <li>• <strong>company_name</strong> - Will be linked or created</li>
+          {!targetCompany && <li>• <strong>company_name</strong> - Will be linked or created</li>}
+          {targetCompany && <li className="font-bold text-blue-900">• Company column is ignored (locked to {targetCompany.name})</li>}
         </ul>
       </div>
     </div>
@@ -270,6 +348,56 @@ const BulkImport: React.FC = () => {
       {step === 'upload' && renderUpload()}
       {step === 'processing' && renderProcessing()}
       {step === 'result' && renderResult()}
+
+      {/* Verification Modal */}
+      <Modal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        title="Verify Bulk Import"
+      >
+        <div className="space-y-6">
+          <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl flex items-start">
+            <AlertTriangle className="w-5 h-5 text-amber-600 mr-3 mt-0.5" />
+            <p className="text-xs text-amber-800 leading-relaxed">
+              You are about to perform a <strong>scoped upload</strong>. All properties in this file will be strictly associated with the target company. Any company identifiers in the file will be ignored.
+            </p>
+          </div>
+
+          <div className="bg-gray-50 rounded-2xl p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Target Company</span>
+              <span className="text-sm font-bold text-gray-900">{targetCompany?.name}</span>
+            </div>
+            <div className="h-px bg-gray-200" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Properties</span>
+                <span className="text-lg font-bold text-gray-900">{previewStats?.count}</span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Total GFA Impact</span>
+                <span className="text-lg font-bold text-gray-900">{(previewStats?.totalGfa || 0).toLocaleString()} <span className="text-[10px] text-gray-400">sqft</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex space-x-3 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setIsConfirmModalOpen(false)}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpload}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors flex items-center justify-center shadow-lg shadow-blue-200"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Confirm & Ingest
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

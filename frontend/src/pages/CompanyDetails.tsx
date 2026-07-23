@@ -14,32 +14,49 @@ import {
   Globe,
   Briefcase,
   AlertCircle,
-  Copy
+  Copy,
+  Camera,
+  History,
+  Settings,
+  Check,
+  X,
+  Upload,
+  Loader2
 } from 'lucide-react';
-import { getCompany } from '../api/companies';
-import { getProperties } from '../api/properties';
+import { getCompany, updateCompany, Company } from '../api/companies';
+import { getProperties, deleteProperty } from '../api/properties';
+import { getLastSnapshotForCompany, Snapshot } from '../api/snapshots';
 import CompanyNotes from '../components/CompanyNotes';
+import RecordAuditLog from '../components/RecordAuditLog';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
 const CompanyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [company, setCompany] = useState<any>(null);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [lastSnapshot, setLastSnapshot] = useState<Snapshot | null>(null);
   const [portfolio, setPortfolio] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'notes'>('portfolio');
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'notes' | 'audit' | 'settings'>('portfolio');
+
+  // Edit State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editValues, setEditValues] = useState<any>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!id) return;
     setIsLoading(true);
     try {
-      const [compData, propData] = await Promise.all([
+      const [compData, propData, snapData] = await Promise.all([
         getCompany(id),
-        getProperties({ companyId: id, limit: 100 })
+        getProperties({ companyId: id, limit: 100 }),
+        getLastSnapshotForCompany(id)
       ]);
       setCompany(compData);
       setPortfolio(propData.data);
+      setLastSnapshot(snapData);
     } catch (error) {
       console.error('Failed to fetch company details:', error);
     } finally {
@@ -51,10 +68,35 @@ const CompanyDetails: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  const handleSaveProfile = async () => {
+    if (!id) return;
+    setIsSaving(true);
+    try {
+      await updateCompany(id, editValues);
+      await fetchData();
+      setIsEditingProfile(false);
+    } catch (error) {
+      console.error('Failed to update company:', error);
+      alert('Failed to update company profile.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProp = async (propId: string) => {
+    if (!window.confirm('Are you sure you want to soft-delete this property?')) return;
+    try {
+      await deleteProperty(propId);
+      await fetchData();
+    } catch (error) {
+      alert('Failed to delete property.');
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full text-black">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center h-full text-black py-40">
+        <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
       </div>
     );
   }
@@ -85,13 +127,21 @@ const CompanyDetails: React.FC = () => {
           <div>
             <div className="flex items-center space-x-3">
               <h1 className="text-3xl font-bold text-gray-900">{company.name}</h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border bg-blue-50 text-blue-600 border-blue-100">
-                {company.countryCode} Registered
+              <span className={cn(
+                "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border",
+                company.status === 'active' ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-50 text-gray-500 border-gray-100"
+              )}>
+                {company.status}
               </span>
+              {company.indexListed && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border bg-blue-50 text-blue-600 border-blue-100">
+                  INDEX LISTED
+                </span>
+              )}
             </div>
             <div className="flex items-center text-gray-500 mt-1">
               <Globe className="w-4 h-4 mr-1 text-gray-400" />
-              <span className="text-sm font-medium">Reg: {company.registrationNumber || 'Not Provided'}</span>
+              <span className="text-sm font-medium">Reg: {company.registrationNumber || '—'}</span>
               <span className="mx-2 text-gray-300">•</span>
               <div className="flex items-center text-xs font-mono text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded group/id relative cursor-pointer" title={company.id}>
                 <span className="font-bold mr-1.5 uppercase tracking-tighter">ID:</span>
@@ -105,12 +155,26 @@ const CompanyDetails: React.FC = () => {
               </div>
               <span className="mx-2 text-gray-300">•</span>
               <Calendar className="w-4 h-4 mr-1 text-gray-400" />
-              <span className="text-sm font-medium text-gray-400">JOINED {format(new Date(company.createdAt), 'MMM yyyy')}</span>
+              <span className="text-sm font-medium text-gray-400 uppercase">SINCE {format(new Date(company.createdAt), 'MMM yyyy')}</span>
             </div>
           </div>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-gray-50 transition-colors shadow-sm">
+          <button 
+            onClick={() => navigate(`/import?companyId=${company.id}`)}
+            className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <Upload className="w-4 h-4 mr-2 text-blue-500" />
+            Bulk Upload
+          </button>
+          <button 
+            onClick={() => {
+              setEditValues({ ...company });
+              setIsEditingProfile(true);
+              setActiveTab('settings');
+            }}
+            className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-black transition-colors shadow-lg"
+          >
             <Edit2 className="w-4 h-4 mr-2" />
             Edit Profile
           </button>
@@ -118,29 +182,39 @@ const CompanyDetails: React.FC = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 mb-4">
             <Building2 className="w-5 h-5" />
           </div>
-          <p className="text-sm font-medium text-gray-500">Portfolio Size</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{portfolio.length} Assets</p>
+          <p className="text-sm font-medium text-gray-500">Live Assets</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{portfolio.length} Properties</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-4">
             <TrendingUp className="w-5 h-5" />
           </div>
-          <p className="text-sm font-medium text-gray-500">Total GFA Managed</p>
+          <p className="text-sm font-medium text-gray-500">Live GFA</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{totalGfa.toLocaleString()} <span className="text-xs font-normal text-gray-400 uppercase">sqft</span></p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 mb-4">
-            <Briefcase className="w-5 h-5" />
+            <Users className="w-5 h-5" />
           </div>
-          <p className="text-sm font-medium text-gray-500">Global Coverage</p>
+          <p className="text-sm font-medium text-gray-500">Reported Count</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
-            {Array.from(new Set(portfolio.map(p => p.countryCode))).length} Countries
+            {company.reportPropertyCount || '—'}
           </p>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 mb-4">
+            <Camera className="w-5 h-5" />
+          </div>
+          <p className="text-sm font-medium text-gray-500">Last Snapshot</p>
+          <p className="text-sm font-bold text-gray-900 mt-1 truncate" title={lastSnapshot?.name || 'Never captured'}>
+            {lastSnapshot?.name || '—'}
+          </p>
+          {lastSnapshot && <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-tighter">Captured {format(new Date(lastSnapshot.createdAt), 'MMM d, yyyy')}</p>}
         </div>
       </div>
 
@@ -149,6 +223,8 @@ const CompanyDetails: React.FC = () => {
         {[
           { id: 'portfolio', name: 'Asset Portfolio', icon: Building2 },
           { id: 'notes', name: 'Research & Notes', icon: FileText },
+          { id: 'audit', name: 'Audit History', icon: History },
+          { id: 'settings', name: 'Profile & Settings', icon: Settings },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -169,10 +245,10 @@ const CompanyDetails: React.FC = () => {
         })}
       </div>
 
-      <div>
-        {activeTab === 'portfolio' ? (
+      <div className="min-h-[400px]">
+        {activeTab === 'portfolio' && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-4 bg-gray-50 border-b border-gray-100">
+            <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Live Assets</h3>
             </div>
             <div className="overflow-x-auto">
@@ -219,9 +295,11 @@ const CompanyDetails: React.FC = () => {
                           <div className="text-[10px] font-bold text-green-600 uppercase tracking-tighter">{stake?.status}</div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <Link to={`/properties/${prop.id}`} className="p-2 text-gray-400 hover:text-blue-600 rounded-lg inline-block transition-colors">
-                            <ChevronRight className="w-4 h-4" />
-                          </Link>
+                          <div className="flex items-center justify-end space-x-2">
+                            <Link to={`/properties/${prop.id}`} className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors">
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -237,9 +315,182 @@ const CompanyDetails: React.FC = () => {
               </table>
             </div>
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'notes' && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-[600px]">
             <CompanyNotes companyId={company.id} />
+          </div>
+        )}
+
+        {activeTab === 'audit' && (
+          <RecordAuditLog tableName="Company" recordId={company.id} />
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="max-w-2xl">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Company Profile & Governance</h3>
+                  <p className="text-sm text-gray-500 mt-1">Manage core identifiers and index visibility controls.</p>
+                </div>
+                {!isEditingProfile && (
+                  <button 
+                    onClick={() => {
+                      setEditValues({ ...company });
+                      setIsEditingProfile(true);
+                    }}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Company Name</label>
+                    {isEditingProfile ? (
+                      <input 
+                        className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm outline-none"
+                        value={editValues.name}
+                        onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+                      />
+                    ) : (
+                      <p className="text-sm font-bold text-gray-900">{company.name}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">ISIN Identifier</label>
+                    {isEditingProfile ? (
+                      <input 
+                        className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm outline-none"
+                        value={editValues.isin || ''}
+                        onChange={(e) => setEditValues({ ...editValues, isin: e.target.value })}
+                        placeholder="e.g. US0378331005"
+                      />
+                    ) : (
+                      <p className="text-sm font-bold text-gray-900 font-mono">{company.isin || 'Not set'}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reported Property Count</label>
+                    {isEditingProfile ? (
+                      <input 
+                        type="number"
+                        className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm outline-none"
+                        value={editValues.reportPropertyCount || ''}
+                        onChange={(e) => setEditValues({ ...editValues, reportPropertyCount: e.target.value })}
+                      />
+                    ) : (
+                      <p className="text-sm font-bold text-gray-900">{company.reportPropertyCount || '—'}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</label>
+                    {isEditingProfile ? (
+                      <select 
+                        className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm outline-none bg-white"
+                        value={editValues.status}
+                        onChange={(e) => setEditValues({ ...editValues, status: e.target.value })}
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    ) : (
+                      <span className={cn(
+                        "inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase border",
+                        company.status === 'active' ? "bg-green-50 text-green-700 border-green-100" : "bg-gray-50 text-gray-500 border-gray-100"
+                      )}>
+                        {company.status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">Index Visibility</h4>
+                      <p className="text-xs text-gray-500">Should this company appear in the public investor index?</p>
+                    </div>
+                    {isEditingProfile ? (
+                      <button 
+                        onClick={() => setEditValues({ ...editValues, indexListed: !editValues.indexListed })}
+                        className={cn(
+                          "w-12 h-6 rounded-full transition-colors relative",
+                          editValues.indexListed ? "bg-blue-600" : "bg-gray-200"
+                        )}
+                      >
+                        <div className={cn(
+                          "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform",
+                          editValues.indexListed ? "right-1" : "left-1"
+                        )} />
+                      </button>
+                    ) : (
+                      <span className={cn(
+                        "text-[10px] font-black px-2 py-1 rounded",
+                        company.indexListed ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-400"
+                      )}>
+                        {company.indexListed ? 'LISTED' : 'HIDDEN'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">Snapshot Inclusions</h4>
+                      <p className="text-xs text-gray-500">Include this company in point-in-time portfolio snapshots?</p>
+                    </div>
+                    {isEditingProfile ? (
+                      <button 
+                        onClick={() => setEditValues({ ...editValues, snapshotsEnabled: !editValues.snapshotsEnabled })}
+                        className={cn(
+                          "w-12 h-6 rounded-full transition-colors relative",
+                          editValues.snapshotsEnabled ? "bg-blue-600" : "bg-gray-200"
+                        )}
+                      >
+                        <div className={cn(
+                          "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform",
+                          editValues.snapshotsEnabled ? "right-1" : "left-1"
+                        )} />
+                      </button>
+                    ) : (
+                      <span className={cn(
+                        "text-[10px] font-black px-2 py-1 rounded",
+                        company.snapshotsEnabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"
+                      )}>
+                        {company.snapshotsEnabled ? 'ENABLED' : 'DISABLED'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {isEditingProfile && (
+                  <div className="flex items-center space-x-3 pt-6">
+                    <button 
+                      disabled={isSaving}
+                      onClick={handleSaveProfile}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors flex items-center shadow-lg shadow-blue-200"
+                    >
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                      Save Changes
+                    </button>
+                    <button 
+                      onClick={() => setIsEditingProfile(false)}
+                      className="px-6 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

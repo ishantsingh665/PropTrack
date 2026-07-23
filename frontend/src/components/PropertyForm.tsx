@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { getPropertyTypes } from '../api/propertyTypes';
+import { getCompanies } from '../api/companies';
 
 interface PropertyFormProps {
   initialData?: any;
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  preselectedCompanyId?: string; // Add this prop
 }
 
-const PropertyForm: React.FC<PropertyFormProps> = ({ initialData, onSubmit, onCancel, isLoading }) => {
+const PropertyForm: React.FC<PropertyFormProps> = ({ initialData, onSubmit, onCancel, isLoading, preselectedCompanyId }) => {
   const [types, setTypes] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     parentId: initialData?.parentId || '',
     propertyLevel: initialData?.propertyLevel || 'building',
@@ -25,10 +28,18 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ initialData, onSubmit, onCa
     latitude: initialData?.latitude || '',
     longitude: initialData?.longitude || '',
     logEntry: '',
+    initialCompanyId: preselectedCompanyId || '',
+    initialOwnershipPct: '100',
   });
 
   useEffect(() => {
-    getPropertyTypes().then(setTypes).catch(console.error);
+    Promise.all([
+      getPropertyTypes(),
+      getCompanies({ limit: 200 })
+    ]).then(([typesData, compsData]) => {
+      setTypes(typesData);
+      setCompanies(compsData.data);
+    }).catch(console.error);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,6 +56,38 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ initialData, onSubmit, onCa
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+      {!initialData && (
+        <div className="grid grid-cols-2 gap-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-bold text-blue-600 uppercase tracking-wider">Associated Company</label>
+            <select
+              className="w-full px-3 py-2 mt-1 border border-blue-200 rounded-lg text-sm text-black focus:ring-2 focus:ring-blue-500 outline-none"
+              value={formData.initialCompanyId}
+              onChange={(e) => setFormData({ ...formData, initialCompanyId: e.target.value })}
+              disabled={!!preselectedCompanyId}
+            >
+              <option value="">Select Company (Optional)</option>
+              {companies.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-2 md:col-span-1">
+            <label className="block text-xs font-bold text-blue-600 uppercase tracking-wider">Initial Stake (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              className="w-full px-3 py-2 mt-1 border border-blue-200 rounded-lg text-sm text-black focus:ring-2 focus:ring-blue-500 outline-none"
+              value={formData.initialOwnershipPct}
+              onChange={(e) => setFormData({ ...formData, initialOwnershipPct: e.target.value })}
+              disabled={!formData.initialCompanyId}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Level</label>

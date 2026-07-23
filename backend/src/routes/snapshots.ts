@@ -18,6 +18,12 @@ const snapshotRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
     return { years };
   });
 
+  // Get Last Snapshot for Company
+  server.get('/snapshots/last/:companyId', { preHandler: [server.authenticate] }, async (request: any, reply) => {
+    const { companyId } = request.params;
+    return await snapshotService.getLastSnapshotForCompany(companyId);
+  });
+
   // List All Snapshots
   server.get('/snapshots', { preHandler: [server.authenticate] }, async (request: any, reply) => {
     const { year } = request.query;

@@ -290,6 +290,19 @@ export class SnapshotService {
   }
 
   /**
+   * Finds the last snapshot that included this company.
+   */
+  async getLastSnapshotForCompany(companyId: string) {
+    const sc = await this.prisma.snapshotCompany.findFirst({
+      where: { companyId },
+      include: { snapshot: true },
+      orderBy: { snapshot: { snapshotNumber: 'desc' } }
+    });
+
+    return sc?.snapshot || null;
+  }
+
+  /**
    * Gets dashboard data (keeping old logic but adapted if needed)
    * The MD doesn't explicitly mention the dashboard but it's part of the existing system.
    */

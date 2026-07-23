@@ -49,7 +49,16 @@ const companyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
 
   // Create Company
   server.post('/', { preHandler: [server.authenticate, roleGuard(['ADMIN', 'EDITOR']), snapshotGate] }, async (request: any, reply) => {
-    const { name, registrationNumber, countryCode } = request.body;
+    const { 
+      name, 
+      registrationNumber, 
+      countryCode,
+      isin,
+      status,
+      snapshotsEnabled,
+      indexListed,
+      reportPropertyCount
+    } = request.body;
 
     if (!name || !countryCode) {
       return reply.status(400).send({ message: 'Name and Country Code are required' });
@@ -60,6 +69,11 @@ const companyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
         name,
         registrationNumber,
         countryCode,
+        isin,
+        status: status || 'active',
+        snapshotsEnabled: snapshotsEnabled ?? true,
+        indexListed: indexListed ?? false,
+        reportPropertyCount: reportPropertyCount ? parseInt(reportPropertyCount) : null
       },
     });
 
@@ -69,7 +83,16 @@ const companyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
   // Update Company
   server.put('/:id', { preHandler: [server.authenticate, roleGuard(['ADMIN', 'EDITOR'])] }, async (request: any, reply) => {
     const { id } = request.params;
-    const { name, registrationNumber, countryCode } = request.body;
+    const { 
+      name, 
+      registrationNumber, 
+      countryCode,
+      isin,
+      status,
+      snapshotsEnabled,
+      indexListed,
+      reportPropertyCount
+    } = request.body;
 
     const company = await server.prisma.company.update({
       where: { id },
@@ -77,6 +100,11 @@ const companyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
         name,
         registrationNumber,
         countryCode,
+        isin,
+        status,
+        snapshotsEnabled,
+        indexListed,
+        reportPropertyCount: reportPropertyCount !== undefined ? (reportPropertyCount ? parseInt(reportPropertyCount) : null) : undefined
       },
     });
 

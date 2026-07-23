@@ -98,27 +98,44 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
     const addressNormalized = normalizeAddress(addressLatin || addressLine1);
 
     const { latitude, longitude } = request.body;
+    const { initialCompanyId, initialOwnershipPct } = request.body;
     const isManual = latitude !== undefined && longitude !== undefined;
 
-    const property = await server.prisma.property.create({
-      data: {
-        parentId,
-        propertyLevel,
-        propertyTypeId,
-        name,
-        addressLine1,
-        addressLatin,
-        addressNormalized,
-        city,
-        postalCode,
-        countryCode,
-        gfaSqft,
-        gfaInputValue,
-        gfaInputUnit,
-        latitude: isManual ? parseFloat(latitude) : null,
-        longitude: isManual ? parseFloat(longitude) : null,
-        geocodeStatus: isManual ? 'manual_override' : 'pending',
-      },
+    const property = await server.prisma.$transaction(async (tx) => {
+      const p = await tx.property.create({
+        data: {
+          parentId,
+          propertyLevel,
+          propertyTypeId,
+          name,
+          addressLine1,
+          addressLatin,
+          addressNormalized,
+          city,
+          postalCode,
+          countryCode,
+          gfaSqft,
+          gfaInputValue,
+          gfaInputUnit,
+          latitude: isManual ? parseFloat(latitude) : null,
+          longitude: isManual ? parseFloat(longitude) : null,
+          geocodeStatus: isManual ? 'manual_override' : 'pending',
+        },
+      });
+
+      if (initialCompanyId) {
+        await tx.propertyCompany.create({
+          data: {
+            propertyId: p.id,
+            companyId: initialCompanyId,
+            ownershipPct: initialOwnershipPct ? parseFloat(initialOwnershipPct) : 100,
+            status: 'active',
+            validFrom: new Date(),
+          }
+        });
+      }
+
+      return p;
     });
 
     if (!isManual) {

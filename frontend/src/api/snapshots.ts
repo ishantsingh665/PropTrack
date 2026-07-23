@@ -77,6 +77,11 @@ export const getSnapshotYears = async (): Promise<number[]> => {
   return response.data.years;
 };
 
+export const getLastSnapshotForCompany = async (companyId: string): Promise<Snapshot | null> => {
+  const response = await api.get(`/snapshots/last/${companyId}`);
+  return response.data;
+};
+
 export const getSnapshotPreview = async (): Promise<SnapshotPreview> => {
   const response = await api.get('/snapshots/preview');
   return response.data;

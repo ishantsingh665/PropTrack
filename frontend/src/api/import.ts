@@ -11,11 +11,12 @@ export interface ImportJob {
   createdAt: string;
 }
 
-export const uploadCsv = async (file: File) => {
+export const uploadCsv = async (file: File, companyId?: string) => {
   const formData = new FormData();
   formData.append('csv', file);
 
-  const response = await api.post('/import', formData, {
+  const url = companyId ? `/import?companyId=${companyId}` : '/import';
+  const response = await api.post(url, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

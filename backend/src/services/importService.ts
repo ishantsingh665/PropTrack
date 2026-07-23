@@ -7,7 +7,7 @@ import { GeocodeService } from './geocodeService.js';
 export class ImportService {
   constructor(private prisma: PrismaClient) {}
 
-  async processImport(jobId: string, csvData: string) {
+  async processImport(jobId: string, csvData: string, overrideCompanyId?: string) {
     const job = await this.prisma.importJob.findUnique({ where: { id: jobId } });
     if (!job) return;
 
@@ -80,8 +80,8 @@ export class ImportService {
 
               newPropertyIds.push(property.id);
 
-              // If companyId is provided, create ownership stake
-              const companyId = row.companyId;
+              // If companyId is provided (or overridden), create ownership stake
+              const companyId = overrideCompanyId || row.companyId;
               if (companyId) {
                 await tx.propertyCompany.create({
                   data: {
@@ -89,6 +89,7 @@ export class ImportService {
                     companyId,
                     ownershipPct: parseFloat(row.ownershipPct || '100'),
                     status: 'active',
+                    validFrom: new Date(),
                   }
                 });
               }
