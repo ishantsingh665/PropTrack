@@ -12,6 +12,27 @@ export interface Snapshot {
   createdBy: string;
 }
 
+// Legacy Snapshot interface for Dashboard compatibility
+export interface LegacySnapshot {
+  id: string;
+  companyId: string;
+  month: string;
+  propertyCount: number;
+  totalGfaSqft: number;
+  activeStakeCount: number;
+  createdAt: string;
+}
+
+export interface DashboardData {
+  current: LegacySnapshot | null;
+  previous: LegacySnapshot | null;
+  trends: {
+    propertyCountDelta: number;
+    gfaDelta: number;
+    stakesDelta: number;
+  };
+}
+
 export interface SnapshotDetail extends Omit<Snapshot, 'companiesIncluded' | 'propertiesIncluded' | 'totalGfaSqft'> {
   companies: SnapshotCompany[];
 }
@@ -63,6 +84,12 @@ export const getSnapshotPreview = async (): Promise<SnapshotPreview> => {
 
 export const createSnapshot = async (name: string, year: number): Promise<Snapshot> => {
   const response = await api.post('/snapshots', { name, year });
+  return response.data;
+};
+
+// Legacy alias for Dashboard compatibility
+export const takeSnapshot = async () => {
+  const response = await api.post('/snapshots/monthly');
   return response.data;
 };
 

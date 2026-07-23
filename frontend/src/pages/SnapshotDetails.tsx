@@ -11,6 +11,7 @@ import {
   X, 
   RotateCcw,
   Copy,
+  Search,
   ChevronDown,
   ChevronUp,
   ExternalLink,
