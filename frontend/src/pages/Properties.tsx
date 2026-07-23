@@ -85,25 +85,28 @@ const handleCreateOrUpdate = async (formData: any) => {
   }
 };
 
-    if (!window.confirm('Are you sure you want to delete this property?')) return;
-    try {
-      await deleteProperty(id);
-      fetchProperties();
-    } catch (error) {
-      console.error('Delete failed:', error);
-    }
-  };
+const handleDelete = async (id: string) => {
+  if (!window.confirm('Are you sure you want to delete this property?')) return;
+  try {
+    await deleteProperty(id);
+    fetchProperties();
+    setNotification({ message: 'Property deleted successfully.', type: 'success' });
+  } catch (error: any) {
+    console.error('Delete failed:', error);
+    const errorMessage = error.response?.data?.message || 'An unexpected error occurred.';
+    setNotification({ message: `Failed to delete property: ${errorMessage}`, type: 'error' });
+  }
+};
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-700';
-      case 'sold': return 'bg-gray-100 text-gray-700';
-      case 'transferred': return 'bg-blue-100 text-blue-700';
-      case 'reversed': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'active': return 'bg-green-100 text-green-700';
+    case 'sold': return 'bg-gray-100 text-gray-700';
+    case 'transferred': return 'bg-blue-100 text-blue-700';
+    case 'reversed': return 'bg-red-100 text-red-700';
+    default: return 'bg-gray-100 text-gray-700';
+  }
+};
   return (
     <div className="space-y-6">
       {notification && (
