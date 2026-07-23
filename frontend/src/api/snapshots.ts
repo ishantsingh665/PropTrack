@@ -6,7 +6,7 @@ export interface Snapshot {
   month: string;
   propertyCount: number;
   totalGfaSqft: number;
-  activeStakesCount: number;
+  activeStakeCount: number;
   createdAt: string;
 }
 

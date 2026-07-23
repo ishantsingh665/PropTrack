@@ -163,14 +163,12 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
               <Building2 className="w-5 h-5" />
             </div>
-            {dashboardData && (
+            {dashboardData?.trends && (
               <div className={cn("flex items-center text-xs font-bold", trendColor(dashboardData.trends.propertyCountDelta))}>
                 {trendIcon(dashboardData.trends.propertyCountDelta)}
                 {dashboardData.trends.propertyCountDelta > 0 ? '+' : ''}{dashboardData.trends.propertyCountDelta}
@@ -188,7 +186,7 @@ const Dashboard: React.FC = () => {
             <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
               <BarChart3 className="w-5 h-5" />
             </div>
-            {dashboardData && (
+            {dashboardData?.trends && (
               <div className={cn("flex items-center text-xs font-bold", trendColor(dashboardData.trends.gfaDelta))}>
                 {trendIcon(dashboardData.trends.gfaDelta)}
                 {dashboardData.trends.gfaDelta > 0 ? '+' : ''}{(dashboardData.trends.gfaDelta / 1000).toFixed(1)}k
@@ -206,7 +204,7 @@ const Dashboard: React.FC = () => {
             <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
               <Users className="w-5 h-5" />
             </div>
-            {dashboardData && (
+            {dashboardData?.trends && (
               <div className={cn("flex items-center text-xs font-bold", trendColor(dashboardData.trends.stakesDelta))}>
                 {trendIcon(dashboardData.trends.stakesDelta)}
                 {dashboardData.trends.stakesDelta > 0 ? '+' : ''}{dashboardData.trends.stakesDelta}
@@ -215,7 +213,7 @@ const Dashboard: React.FC = () => {
           </div>
           <p className="text-sm font-medium text-gray-500 mt-4">Active Stakes</p>
           <p className="text-3xl font-bold text-gray-900 mt-1">
-            {dashboardData?.current?.activeStakesCount.toLocaleString() || '—'}
+            {dashboardData?.current?.activeStakeCount.toLocaleString() || '—'}
           </p>
         </div>
       </div>
@@ -296,7 +294,7 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">{dashboardData.current.propertyCount}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{dashboardData.current.totalGfaSqft.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{dashboardData.current.activeStakesCount}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{dashboardData.current.activeStakeCount}</td>
                   <td className="px-6 py-4 text-xs text-gray-400">{format(new Date(dashboardData.current.createdAt), 'MMM d, yyyy HH:mm')}</td>
                 </tr>
               )}
@@ -310,7 +308,7 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">{dashboardData.previous.propertyCount}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{dashboardData.previous.totalGfaSqft.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{dashboardData.previous.activeStakesCount}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{dashboardData.previous.activeStakeCount}</td>
                   <td className="px-6 py-4 text-xs text-gray-300">{format(new Date(dashboardData.previous.createdAt), 'MMM d, yyyy HH:mm')}</td>
                 </tr>
               )}

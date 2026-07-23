@@ -97,9 +97,17 @@ export class SnapshotService {
       where: { companyId_month: { companyId, month: prevMonth } }
     });
 
+    // Compute deltas (trends)
+    const trends = {
+      propertyCountDelta: (current?.propertyCount || 0) - (previous?.propertyCount || 0),
+      gfaDelta: (current?.totalGfaSqft || 0) - (previous?.totalGfaSqft || 0),
+      stakesDelta: (current?.activeStakeCount || 0) - (previous?.activeStakeCount || 0)
+    };
+
     return {
       current,
       previous,
+      trends,
       month,
       prevMonth
     };
