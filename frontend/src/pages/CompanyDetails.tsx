@@ -50,6 +50,23 @@ const CompanyDetails: React.FC = () => {
   const [editValues, setEditValues] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  // Reset to Page 1 when changing page size or search
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
+
+  // Compute slices
+  const totalProperties = portfolio.length;
+  const totalPages = Math.ceil(totalProperties / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalProperties);
+  const paginatedProperties = portfolio.slice(startIndex, endIndex);
+
   const handleAddProperty = async (formData: any) => {
     console.log('CompanyDetails: Attempting to create property:', formData);
     try {
@@ -344,7 +361,7 @@ const CompanyDetails: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {portfolio.map((prop) => {
+                  {paginatedProperties.map((prop) => {
                     const stake = prop.companies?.find((s: any) => s.companyId === company.id);
                     return (
                       <tr key={prop.id} className="hover:bg-gray-50/50 transition-colors group">
@@ -386,7 +403,7 @@ const CompanyDetails: React.FC = () => {
                       </tr>
                     );
                   })}
-                  {portfolio.length === 0 && (
+                  {paginatedProperties.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-6 py-12 text-center text-gray-500 italic text-sm">
                         This company currently has no linked properties.
@@ -395,6 +412,56 @@ const CompanyDetails: React.FC = () => {
                   )}
                 </tbody>
               </table>
+              {/* Pagination Control Bar */}
+              <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+                {/* Left: Summary and Page Size Selector */}
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{totalProperties > 0 ? startIndex + 1 : 0}</span> to{' '}
+                    <span className="font-medium">{endIndex}</span> of{' '}
+                    <span className="font-medium">{totalProperties}</span> properties
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="pageSize" className="text-sm text-gray-500">
+                      Per page:
+                    </label>
+                    <select
+                      id="pageSize"
+                      value={pageSize}
+                      onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                      className="text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 py-1 px-2 border"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Right: Previous / Next Buttons */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500 mr-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm font-medium border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="px-3 py-1 text-sm font-medium border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
