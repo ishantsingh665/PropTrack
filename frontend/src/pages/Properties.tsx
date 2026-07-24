@@ -11,7 +11,10 @@ import { cn } from '../lib/utils';
 
 const Properties: React.FC = () => {
   const [properties, setProperties] = useState<any[]>([]);
-  const [pagination, setPagination] = useState({ after: null, limit: 20 });
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
+  const [after, setAfter] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
@@ -40,30 +43,47 @@ const Properties: React.FC = () => {
     }
   }, []);
 
-  const fetchProperties = useCallback(async (after?: string) => {
+  const fetchProperties = useCallback(async (newAfter?: string) => {
     setIsLoading(true);
     try {
       const { data, pagination: pag } = await getProperties({ 
-        after, 
-        limit: 20, 
+        after: newAfter, 
+        limit: pageSize, 
         ...filters 
       });
       setProperties(data);
-      setPagination(pag);
+      setAfter(pag.after);
     } catch (error) {
       console.error('Failed to fetch properties:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, pageSize]);
 
   useEffect(() => {
     fetchFilters();
   }, [fetchFilters]);
 
+  // Reset pagination when filters change
   useEffect(() => {
-    fetchProperties();
-  }, [fetchProperties]);
+    setCurrentPage(1);
+    setCursorStack([]);
+    fetchProperties(undefined);
+  }, [filters, pageSize, fetchProperties]);
+
+  const handleNext = () => {
+    setCursorStack([...cursorStack, after!]);
+    setCurrentPage(prev => prev + 1);
+    fetchProperties(after);
+  };
+
+  const handlePrev = () => {
+    const newStack = [...cursorStack];
+    const prevCursor = newStack.pop();
+    setCursorStack(newStack);
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+    fetchProperties(prevCursor);
+  };
 const handleCreateOrUpdate = async (formData: any) => {
   console.log('Submitting form data:', formData); // debug log
   setIsLoading(true);
@@ -284,17 +304,42 @@ const getStatusColor = (status: string) => {
           </table>
         </div>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-          <p className="text-xs text-gray-500">
-            Showing {properties.length} properties
-          </p>
-          <div className="flex items-center space-x-2">
+        <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{properties.length}</span> properties
+            </p>
+            <div className="flex items-center gap-2">
+              <label htmlFor="pageSize" className="text-sm text-gray-500">
+                Per page:
+              </label>
+              <select
+                id="pageSize"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 py-1 px-2 border"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 mr-2">Page {currentPage}</span>
             <button
-              disabled={isLoading || !pagination.after}
-              onClick={() => fetchProperties(pagination.after || undefined)}
-              className="p-2 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-50 transition-colors"
+              onClick={handlePrev}
+              disabled={isLoading || currentPage === 1}
+              className="px-3 py-1 text-sm font-medium border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronRight className="w-4 h-4 text-gray-600" />
+              Previous
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={isLoading || !after}
+              className="px-3 py-1 text-sm font-medium border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
             </button>
           </div>
         </div>
