@@ -46,7 +46,8 @@ export class ImportService {
           for (const row of batch) {
             try {
               // Basic Mapping & Validation
-              const propertyTypeId = row.propertyTypeId || row.typeId;
+              console.log('DEBUG: Row data:', row);
+              const propertyTypeId = row['Property Type'] || row.propertyTypeId || row.typeId;
               const addressLine1 = row['address_line1'] || row.addressLine1 || row.address;
               const countryCode = row['country_code'] || row.countryCode || row.country;
               const city = row.city;
