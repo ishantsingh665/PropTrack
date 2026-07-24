@@ -64,8 +64,18 @@ const Dashboard: React.FC = () => {
     if (!selectedCompanyId) return;
     setIsLoading(true);
     try {
-      const data = await getDashboardData(selectedCompanyId);
-      setDashboardData(data);
+      const data = selectedCompanyId === 'all' 
+        ? await getDashboardData('all') // Assuming this needs server-side handling or aggregate logic
+        : await getDashboardData(selectedCompanyId); // This still points to snapshots
+      
+      // I need to switch to using /live when not taking snapshots, or update the fetch logic
+      // to check for 'live' specifically.
+      // Based on user request to see live data:
+      const liveData = await (await fetch(`/api/dashboard/${selectedCompanyId}/live`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } // Assuming token based storage
+      })).json();
+      
+      setDashboardData(liveData);
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
     } finally {
@@ -127,6 +137,7 @@ const Dashboard: React.FC = () => {
             value={selectedCompanyId}
             onChange={(e) => setSelectedCompanyId(e.target.value)}
           >
+            <option value="all">All Companies</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           {gateStatus?.isOpen === false && (
