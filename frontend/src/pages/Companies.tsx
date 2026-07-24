@@ -143,17 +143,17 @@ const Companies: React.FC = () => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage global company records and ownership entities.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100">Companies</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Manage global company records and ownership entities.</p>
         </div>
         <button
           onClick={() => {
             setEditingCompany(null);
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-blue-700 transition-colors"
+          className="bg-blue-600 text-white px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 hover:bg-blue-700 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Add Company
         </button>
       </div>

@@ -139,27 +139,27 @@ const getStatusColor = (status: string) => {
       )}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Properties</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage buildings, units, and global portfolio assets.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100">Properties</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Manage buildings, units, and global portfolio assets.</p>
         </div>
         <button
           onClick={() => {
             setEditingProperty(null);
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-blue-700 transition-colors"
+          className="bg-blue-600 text-white px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 hover:bg-blue-700 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           Add Property
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-slate-950 p-4 rounded-xl shadow-sm border border-slate-800 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Company</label>
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Company</label>
           <select 
-            className="w-full text-sm border-gray-200 rounded-lg focus:ring-blue-500 text-black"
+            className="w-full h-8 text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700/80 rounded-md text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             value={filters.companyId}
             onChange={(e) => setFilters({ ...filters, companyId: e.target.value })}
           >
@@ -168,9 +168,9 @@ const getStatusColor = (status: string) => {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</label>
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Status</label>
           <select 
-            className="w-full text-sm border-gray-200 rounded-lg focus:ring-blue-500 text-black"
+            className="w-full h-8 text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700/80 rounded-md text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
           >
@@ -181,20 +181,20 @@ const getStatusColor = (status: string) => {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Country</label>
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Country</label>
           <input 
             type="text" 
             placeholder="e.g. SE"
             maxLength={2}
-            className="w-full text-sm border-gray-200 rounded-lg focus:ring-blue-500 text-black uppercase"
+            className="w-full h-8 text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700/80 rounded-md text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none uppercase"
             value={filters.countryCode}
             onChange={(e) => setFilters({ ...filters, countryCode: e.target.value.toUpperCase() })}
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Type</label>
+          <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Type</label>
           <select 
-            className="w-full text-sm border-gray-200 rounded-lg focus:ring-blue-500 text-black"
+            className="w-full h-8 text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-700/80 rounded-md text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
             value={filters.typeId}
             onChange={(e) => setFilters({ ...filters, typeId: e.target.value })}
           >
@@ -214,62 +214,59 @@ const getStatusColor = (status: string) => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-100">
-                <th className="px-6 py-4">Property</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">GFA (sqft)</th>
-                <th className="px-6 py-4">Current Owners</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+              <tr className="bg-slate-900/60 text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <th className="px-4 py-2.5">Property</th>
+                <th className="px-4 py-2.5">Type</th>
+                <th className="px-4 py-2.5">GFA (sqft)</th>
+                <th className="px-4 py-2.5">Current Owners</th>
+                <th className="px-4 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-800">
               {properties.map((prop) => (
-                <tr key={prop.id} className="hover:bg-gray-50 transition-colors group">
-                  <td className="px-6 py-4">
+                <tr key={prop.id} className="hover:bg-slate-900/50 transition-colors group">
+                  <td className="px-4 py-2.5">
                     <div className="flex items-center">
                       <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center mr-3",
-                        prop.propertyLevel === 'building' ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
+                        "w-4 h-4 rounded-md flex items-center justify-center mr-3 p-1.5 bg-slate-800/80 text-blue-400",
+                        prop.propertyLevel === 'building' ? "text-blue-400" : "text-purple-400"
                       )}>
-                        {prop.propertyLevel === 'building' ? <Building2 className="w-4 h-4" /> : <div className="text-[10px] font-bold">U</div>}
+                        {prop.propertyLevel === 'building' ? <Building2 className="w-3 h-3" /> : <div className="text-[9px] font-bold">U</div>}
                       </div>
                       <div>
-                        <Link to={`/properties/${prop.id}`} className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                        <Link to={`/properties/${prop.id}`} className="text-sm font-medium text-slate-200 hover:text-white transition-colors">
                           {prop.name || prop.addressLine1}
                         </Link>
-                        <div className="text-xs text-gray-400 flex items-center mt-0.5">
+                        <div className="text-xs font-normal text-slate-400 flex items-center mt-0.5">
                           <MapPin className="w-3 h-3 mr-1" />
                           {prop.city}, {prop.countryCode}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-4 py-2.5 text-xs font-normal text-slate-400">
                     {prop.type?.name}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                  <td className="px-4 py-2.5 text-xs font-normal text-slate-400 tabular-nums">
                     {prop.gfaSqft?.toLocaleString() || '—'}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-2.5">
                     <div className="flex flex-wrap gap-1">
                       {prop.companies?.map((stake: any) => (
-                        <div key={stake.id} className={cn(
-                          "px-2 py-0.5 rounded text-[10px] font-bold flex items-center",
-                          getStatusColor(stake.status)
-                        )}>
+                        <div key={stake.id} className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border bg-slate-800 text-slate-300 border-slate-700">
                           {stake.company.name} ({stake.ownershipPct}%)
                         </div>
                       ))}
                       {(!prop.companies || prop.companies.length === 0) && (
-                        <span className="text-xs text-gray-400 italic font-medium">No active owners</span>
+                        <span className="text-xs text-slate-500 italic font-normal">No active owners</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="px-4 py-2.5 text-right">
+                    <div className="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link
                         to={`/properties/${prop.id}`}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-md transition-colors"
                         title="View Details"
                       >
                         <Eye className="w-4 h-4" />
@@ -279,13 +276,13 @@ const getStatusColor = (status: string) => {
                           setEditingProperty(prop);
                           setIsModalOpen(true);
                         }}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-md transition-colors"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(prop.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-md transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

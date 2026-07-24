@@ -66,30 +66,30 @@ const Transfers: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Transfers & Swaps</h1>
-          <p className="text-sm text-gray-500 mt-1">Record property movements between companies and multi-leg swaps.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100">Transfers & Swaps</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Record property movements between companies and multi-leg swaps.</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-blue-700 transition-colors"
+          className="bg-blue-600 text-white px-3 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 hover:bg-blue-700 transition-colors"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4" />
           New Transfer / Swap
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-slate-950 rounded-xl shadow-sm border border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-100">
-                <th className="px-6 py-4">Date & Type</th>
-                <th className="px-6 py-4">Movement</th>
-                <th className="px-6 py-4">Notes</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+              <tr className="bg-slate-900/60 text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <th className="px-4 py-2.5">Date & Type</th>
+                <th className="px-4 py-2.5">Movement</th>
+                <th className="px-4 py-2.5">Notes</th>
+                <th className="px-4 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-black">
+            <tbody className="divide-y divide-slate-800">
               {transfers.map((transfer) => {
                 // Group legs by property to show movement more clearly
                 // In a transfer, we have an 'out' and an 'in' leg for the same property
