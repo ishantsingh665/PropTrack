@@ -50,11 +50,14 @@ const CompanyDetails: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const handleAddProperty = async (formData: any) => {
+    console.log('CompanyDetails: Attempting to create property:', formData);
     try {
       await createProperty({ ...formData, initialCompanyId: id });
+      console.log('CompanyDetails: Property created successfully');
       setIsAddingProperty(false);
       await fetchData(); // refresh the list
     } catch (error: any) {
+      console.error('CompanyDetails: Failed to add property:', error);
       alert(error.response?.data?.message || 'Failed to add property');
     }
   };
