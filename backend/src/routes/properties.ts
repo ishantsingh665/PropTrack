@@ -99,6 +99,7 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
 
     const { latitude, longitude } = request.body;
     const { initialCompanyId, initialOwnershipPct } = request.body;
+    console.log('DEBUG: Property Create request.body:', { initialCompanyId, initialOwnershipPct, ...request.body });
     const isManual = latitude !== undefined && longitude !== undefined;
 
     const property = await server.prisma.$transaction(async (tx) => {
@@ -123,16 +124,27 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
         },
       });
 
+      console.log('DEBUG: Property created with ID:', p.id);
+
       if (initialCompanyId) {
-        await tx.propertyCompany.create({
-          data: {
-            propertyId: p.id,
-            companyId: initialCompanyId,
-            ownershipPct: initialOwnershipPct ? parseFloat(initialOwnershipPct) : 100,
-            status: 'active',
-            validFrom: new Date(),
-          }
-        });
+        console.log('DEBUG: Attempting to create PropertyCompany link for company:', initialCompanyId);
+        try {
+          const pc = await tx.propertyCompany.create({
+            data: {
+              propertyId: p.id,
+              companyId: initialCompanyId,
+              ownershipPct: initialOwnershipPct ? parseFloat(initialOwnershipPct) : 100,
+              status: 'active',
+              validFrom: new Date(),
+            }
+          });
+          console.log('DEBUG: PropertyCompany link created:', pc.id);
+        } catch (error) {
+          console.error('DEBUG: Failed to create PropertyCompany link:', error);
+          throw error; // Re-throw to rollback transaction
+        }
+      } else {
+        console.log('DEBUG: No initialCompanyId provided.');
       }
 
       return p;
