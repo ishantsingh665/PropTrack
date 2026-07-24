@@ -260,6 +260,23 @@ export class SnapshotService {
     return years.map(y => y.year);
   }
 
+  async getSnapshotsForCompany(companyId: string) {
+    const sc = await this.prisma.snapshotCompany.findMany({
+      where: { companyId },
+      include: { snapshot: true },
+      orderBy: { snapshot: { snapshotNumber: 'desc' } }
+    });
+
+    return sc.map(s => ({
+      id: s.snapshot.id,
+      companyId: s.companyId,
+      snapshotMonth: s.snapshot.name,
+      totalProperties: s.totalPropertyCount,
+      totalGfaSqft: s.totalGfaSqft,
+      createdAt: s.createdAt
+    }));
+  }
+
   async getLastSnapshotForCompany(companyId: string) {
     const sc = await this.prisma.snapshotCompany.findFirst({
       where: { companyId },

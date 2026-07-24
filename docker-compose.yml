@@ -11,7 +11,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://betahobby_admin:Fasting-Geography-Dating8-Bridged@postgres:5432/proptrack
       - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - JWT_EXPIRES_IN=7d
       - MINIO_ENDPOINT=http://localhost:9000
       - MINIO_USER=placeholder
       - MINIO_PASSWORD=placeholder
