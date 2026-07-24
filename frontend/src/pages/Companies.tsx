@@ -9,32 +9,70 @@ import { cn } from '../lib/utils';
 
 const Companies: React.FC = () => {
   const [companies, setCompanies] = useState<any[]>([]);
-  const [pagination, setPagination] = useState({ after: null, limit: 10 });
-  const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  
+  // Pagination State
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [currentCursor, setCurrentCursor] = useState<string | undefined>();
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Search/Filter State
+  const [filters, setFilters] = useState({ search: '', name: '', id: '', isin: '' });
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
+
+  // Debounce effect
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedFilters(filters), 300);
+    return () => clearTimeout(timer);
+  }, [filters]);
 
   const fetchCompanies = useCallback(async (after?: string) => {
     setIsLoading(true);
     try {
-      const { data, pagination: pag } = await getCompanies({ after, limit: 10, search });
+      const { data, pagination: pag } = await getCompanies({ 
+        after, 
+        limit: pageSize, 
+        ...debouncedFilters 
+      });
       setCompanies(data);
-      setPagination(pag);
+      setNextCursor(pag.nextCursor);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [search]);
+  }, [debouncedFilters, pageSize]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchCompanies();
-    }, 300);
-    return () => clearTimeout(timer);
+    setCurrentCursor(undefined);
+    setCursorHistory([]);
+    setCurrentPage(1);
+    fetchCompanies(undefined);
   }, [fetchCompanies]);
+
+  const handleNext = () => {
+    if (nextCursor) {
+      setCursorHistory([...cursorHistory, currentCursor || '']);
+      setCurrentCursor(nextCursor);
+      setCurrentPage(p => p + 1);
+      fetchCompanies(nextCursor);
+    }
+  };
+
+  const handlePrev = () => {
+    const newHistory = [...cursorHistory];
+    const prevCursor = newHistory.pop();
+    setCursorHistory(newHistory);
+    setCurrentCursor(prevCursor === '' ? undefined : prevCursor);
+    setCurrentPage(p => Math.max(p - 1, 1));
+    fetchCompanies(prevCursor === '' ? undefined : prevCursor);
+  };
+
 
   const handleCreateOrUpdate = async (formData: any) => {
     try {
@@ -82,25 +120,47 @@ const Companies: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="p-4 border-b border-gray-100 bg-gray-50">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              />
+            </div>
             <input
               type="text"
-              placeholder="Search by name..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter by Name..."
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              value={filters.name}
+              onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
             />
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              disabled={isLoading}
-              onClick={() => fetchCompanies()}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200 rounded-md transition-colors"
-            >
-              Refresh
-            </button>
+            <input
+              type="text"
+              placeholder="Filter by ID..."
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              value={filters.id}
+              onChange={(e) => setFilters(prev => ({ ...prev, id: e.target.value }))}
+            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Filter by ISIN..."
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                value={filters.isin}
+                onChange={(e) => setFilters(prev => ({ ...prev, isin: e.target.value }))}
+              />
+              <button
+                onClick={() => setFilters({ search: '', name: '', id: '', isin: '' })}
+                className="px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors border border-gray-200"
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </div>
 
@@ -177,17 +237,42 @@ const Companies: React.FC = () => {
           </table>
         </div>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-          <p className="text-xs text-gray-500">
-            Showing {companies.length} companies
-          </p>
-          <div className="flex items-center space-x-2">
+        <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{companies.length}</span> companies
+            </p>
+            <div className="flex items-center gap-2">
+              <label htmlFor="pageSize" className="text-sm text-gray-500">
+                Per page:
+              </label>
+              <select
+                id="pageSize"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 py-1 px-2 border"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 mr-2">Page {currentPage}</span>
             <button
-              disabled={isLoading || !pagination.after}
-              onClick={() => fetchCompanies(pagination.after || undefined)}
-              className="p-2 border border-gray-200 rounded-lg hover:bg-white disabled:opacity-50 transition-colors"
+              onClick={handlePrev}
+              disabled={isLoading || cursorHistory.length === 0}
+              className="px-3 py-1 text-sm font-medium border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronRight className="w-4 h-4 text-gray-600" />
+              Previous
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={isLoading || !nextCursor}
+              className="px-3 py-1 text-sm font-medium border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
             </button>
           </div>
         </div>

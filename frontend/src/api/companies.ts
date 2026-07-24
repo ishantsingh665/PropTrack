@@ -25,7 +25,16 @@ export interface CompanyUpdateInput {
   reportPropertyCount?: number | null;
 }
 
-export const getCompanies = async (params: { after?: string; limit?: number; search?: string }) => {
+export interface FetchCompaniesParams {
+  search?: string;
+  name?: string;
+  id?: string;
+  isin?: string;
+  after?: string;
+  limit?: number;
+}
+
+export const getCompanies = async (params: FetchCompaniesParams) => {
   const response = await api.get('/companies', { params });
   return response.data;
 };

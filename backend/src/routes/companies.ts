@@ -3,31 +3,46 @@ import { roleGuard } from '../middleware/roleGuard.js';
 import { snapshotGate } from '../middleware/snapshotGate.js';
 
 const companyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
-  // List Companies (Keyset Pagination)
+  // List Companies (Keyset Pagination with Search)
   server.get('/', { preHandler: [server.authenticate] }, async (request: any, reply) => {
-    const { after, limit = 50, search } = request.query;
+    const { after, limit = 50, search, name, id, isin } = request.query;
     
-    const take = parseInt(limit.toString());
+    const take = Math.min(parseInt(limit.toString()), 100);
     const cursor = after ? { id: after } : undefined;
     const skip = after ? 1 : 0;
 
+    const where: any = {
+      deletedAt: null,
+      AND: [
+        search ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { id: { contains: search, mode: 'insensitive' } },
+            { isin: { contains: search, mode: 'insensitive' } },
+          ]
+        } : {},
+        name ? { name: { contains: name, mode: 'insensitive' } } : {},
+        id ? { id: { contains: id, mode: 'insensitive' } } : {},
+        isin ? { isin: { contains: isin, mode: 'insensitive' } } : {},
+      ]
+    };
+
     const companies = await server.prisma.company.findMany({
-      take,
+      take: take + 1, // Fetch one extra to check for next page
       skip,
       cursor,
-      where: {
-        deletedAt: null,
-        ...(search ? { name: { contains: search, mode: 'insensitive' } } : {}),
-      },
+      where,
       orderBy: { id: 'asc' },
     });
 
-    const lastId = companies.length > 0 ? companies[companies.length - 1].id : null;
+    const hasNextPage = companies.length > take;
+    const data = hasNextPage ? companies.slice(0, take) : companies;
+    const nextCursor = hasNextPage ? data[data.length - 1].id : null;
 
     return {
-      data: companies,
+      data,
       pagination: {
-        after: lastId,
+        nextCursor,
         limit: take,
       },
     };
