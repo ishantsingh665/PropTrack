@@ -286,10 +286,17 @@ const Layout: React.FC = () => {
         {location.pathname.startsWith('/properties') && (
           <PropertyForm 
             onSubmit={async (data) => {
+              console.log('Layout: Property submission started:', data);
               const { createProperty } = await import('../api/properties');
-              await createProperty(data);
-              setIsHeaderModalOpen(false); 
-              window.location.reload(); 
+              try {
+                await createProperty(data);
+                console.log('Layout: Property created successfully');
+                setIsHeaderModalOpen(false); 
+                window.location.reload();
+              } catch (error) {
+                console.error('Layout: Property creation failed:', error);
+                throw error;
+              }
             }} 
             onCancel={() => setIsHeaderModalOpen(false)} 
           />
