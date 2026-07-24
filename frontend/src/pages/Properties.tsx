@@ -65,6 +65,7 @@ const Properties: React.FC = () => {
     fetchProperties();
   }, [fetchProperties]);
 const handleCreateOrUpdate = async (formData: any) => {
+  console.log('Submitting form data:', formData); // debug log
   setIsLoading(true);
   try {
     if (editingProperty) {

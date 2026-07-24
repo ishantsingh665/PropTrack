@@ -24,10 +24,12 @@ import {
   Loader2
 } from 'lucide-react';
 import { getCompany, updateCompany, Company } from '../api/companies';
-import { getProperties, deleteProperty } from '../api/properties';
+import { getProperties, deleteProperty, createProperty } from '../api/properties';
 import { getLastSnapshotForCompany, Snapshot } from '../api/snapshots';
 import CompanyNotes from '../components/CompanyNotes';
 import RecordAuditLog from '../components/RecordAuditLog';
+import PropertyForm from '../components/PropertyForm';
+import Modal from '../components/Modal';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
@@ -42,8 +44,19 @@ const CompanyDetails: React.FC = () => {
 
   // Edit State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isAddingProperty, setIsAddingProperty] = useState(false);
   const [editValues, setEditValues] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleAddProperty = async (formData: any) => {
+    try {
+      await createProperty({ ...formData, initialCompanyId: id });
+      setIsAddingProperty(false);
+      await fetchData(); // refresh the list
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to add property');
+    }
+  };
 
   const fetchData = useCallback(async () => {
     if (!id) return;
@@ -250,6 +263,12 @@ const CompanyDetails: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Live Assets</h3>
+              <button
+                onClick={() => setIsAddingProperty(true)}
+                className="flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Add Property
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -494,6 +513,14 @@ const CompanyDetails: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Modal at the bottom */}
+      <Modal isOpen={isAddingProperty} onClose={() => setIsAddingProperty(false)} title="Add Property">
+        <PropertyForm
+          preselectedCompanyId={id}
+          onSubmit={handleAddProperty}
+          onCancel={() => setIsAddingProperty(false)}
+        />
+      </Modal>
     </div>
   );
 };
