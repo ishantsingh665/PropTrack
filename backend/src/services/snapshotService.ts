@@ -1,4 +1,4 @@
-import { PrismaClient, Snapshot, SnapshotCompany, SnapshotProperty, Company, Property } from '@prisma/client';
+import { PrismaClient, Snapshot, SnapshotCompany, SnapshotProperty, Company, Property, OwnershipStatus } from '@prisma/client';
 
 export class SnapshotService {
   constructor(private prisma: PrismaClient) {}
@@ -300,8 +300,8 @@ export class SnapshotService {
     const isAll = companyId === 'all';
     
     const whereClause = isAll 
-      ? { status: 'active', validTo: null, property: { deletedAt: null } }
-      : { companyId, status: 'active', validTo: null, property: { deletedAt: null } };
+      ? { status: OwnershipStatus.active, validTo: null, property: { deletedAt: null } }
+      : { companyId, status: OwnershipStatus.active, validTo: null, property: { deletedAt: null } };
 
     const activeStakes = await this.prisma.propertyCompany.findMany({
       where: whereClause,

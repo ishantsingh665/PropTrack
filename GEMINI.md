@@ -9,6 +9,12 @@ This project is a self-hosted property management system called PropTrack.
 - **Storage:** MinIO (S3-compatible).
 - **Geocoding:** Nominatim (OSM).
 
+## Mandatory Validation Workflow (Pre-Push)
+Before executing any `git push` operation, the agent MUST perform the following validations to ensure project stability:
+1.  **Run Build/Type-Check:** Execute `npm run build` in the `backend/` and `frontend/` directories.
+2.  **Verify Success:** Only if the build completes with exit code 0, proceed to commit and push.
+3.  **Halt on Failure:** If any build/test/type-check fails, do NOT commit or push; resolve the error first.
+
 ## Current Progress
 - All backend phases (1-9) are completed, including Auth, Companies, Properties, Transfers, Duplicates, Auditing, Geocoding, Bulk Import, Notes/Attachments, and Snapshots.
 - Frontend (Phase 10) is complete:
