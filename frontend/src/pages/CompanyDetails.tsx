@@ -21,7 +21,8 @@ import {
   Check,
   X,
   Upload,
-  Loader2
+  Loader2,
+  Plus
 } from 'lucide-react';
 import { getCompany, updateCompany, Company } from '../api/companies';
 import { getProperties, deleteProperty, createProperty } from '../api/properties';
