@@ -51,6 +51,7 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ initialData, onSubmit, onCa
     if (!data.name) delete (data as any).name;
     if (!data.postalCode) delete (data as any).postalCode;
     
+    console.log('PropertyForm: Submitting data:', data);
     await onSubmit(data);
   };
 
