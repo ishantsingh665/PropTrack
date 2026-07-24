@@ -1,5 +1,14 @@
 import api from './client';
 
+export interface CompanySnapshotSummary {
+  id: string;
+  companyId: string;
+  snapshotMonth: string;
+  totalProperties: number;
+  totalGfaSqft: number;
+  createdAt: string;
+}
+
 export interface Snapshot {
   id: string;
   snapshotNumber: number;
@@ -75,6 +84,11 @@ export const getSnapshots = async (year?: number): Promise<Snapshot[]> => {
 export const getSnapshotYears = async (): Promise<number[]> => {
   const response = await api.get('/snapshots/years');
   return response.data.years;
+};
+
+export const getForCompany = async (companyId: string): Promise<CompanySnapshotSummary[]> => {
+  const response = await api.get(`/snapshots/company/${companyId}`);
+  return response.data;
 };
 
 export const getLastSnapshotForCompany = async (companyId: string): Promise<Snapshot | null> => {

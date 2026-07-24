@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { getCompany, updateCompany, Company } from '../api/companies';
 import { getProperties, deleteProperty, createProperty } from '../api/properties';
-import { getLastSnapshotForCompany, Snapshot } from '../api/snapshots';
+import { getLastSnapshotForCompany, Snapshot, getForCompany, CompanySnapshotSummary } from '../api/snapshots';
 import CompanyNotes from '../components/CompanyNotes';
 import RecordAuditLog from '../components/RecordAuditLog';
 import PropertyForm from '../components/PropertyForm';
@@ -40,8 +40,9 @@ const CompanyDetails: React.FC = () => {
   const [company, setCompany] = useState<Company | null>(null);
   const [lastSnapshot, setLastSnapshot] = useState<Snapshot | null>(null);
   const [portfolio, setPortfolio] = useState<any[]>([]);
+  const [snapshots, setSnapshots] = useState<CompanySnapshotSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'notes' | 'audit' | 'settings'>('portfolio');
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'notes' | 'audit' | 'settings' | 'snapshots'>('portfolio');
 
   // Edit State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -66,14 +67,16 @@ const CompanyDetails: React.FC = () => {
     if (!id) return;
     setIsLoading(true);
     try {
-      const [compData, propData, snapData] = await Promise.all([
+      const [compData, propData, snapData, snapHistory] = await Promise.all([
         getCompany(id),
         getProperties({ companyId: id, limit: 100 }),
-        getLastSnapshotForCompany(id)
+        getLastSnapshotForCompany(id),
+        getForCompany(id)
       ]);
       setCompany(compData);
       setPortfolio(propData.data);
       setLastSnapshot(snapData);
+      setSnapshots(snapHistory);
     } catch (error) {
       console.error('Failed to fetch company details:', error);
     } finally {
@@ -241,6 +244,7 @@ const CompanyDetails: React.FC = () => {
           { id: 'portfolio', name: 'Asset Portfolio', icon: Building2 },
           { id: 'notes', name: 'Research & Notes', icon: FileText },
           { id: 'audit', name: 'Audit History', icon: History },
+          { id: 'snapshots', name: 'SNAPSHOT HISTORY', icon: Camera, count: snapshots.length },
           { id: 'settings', name: 'Profile & Settings', icon: Settings },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -256,6 +260,12 @@ const CompanyDetails: React.FC = () => {
             >
               <Icon className="w-4 h-4 mr-2" />
               {tab.name}
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className={cn(
+                  "ml-2 px-1.5 py-0.5 rounded text-[10px] font-black",
+                  isActive ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
+                )}>{tab.count}</span>
+              )}
               {isActive && <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full" />}
             </button>
           );
@@ -263,6 +273,55 @@ const CompanyDetails: React.FC = () => {
       </div>
 
       <div className="min-h-[400px]">
+        {activeTab === 'snapshots' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">Historical Snapshots</h3>
+              <p className="text-sm text-gray-500 mt-1">Review monthly portfolio snapshots captured for this company.</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/50 text-[10px] uppercase tracking-wider text-gray-400 font-bold border-b border-gray-100">
+                    <th className="px-6 py-4">Month</th>
+                    <th className="px-6 py-4 text-right">Properties Recorded</th>
+                    <th className="px-6 py-4 text-right">Total GFA (sq ft)</th>
+                    <th className="px-6 py-4 text-right">Created At</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {snapshots
+                    .sort((a, b) => b.snapshotMonth.localeCompare(a.snapshotMonth))
+                    .map((snap) => (
+                      <tr key={snap.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-6 py-4 text-sm font-bold text-gray-900">{snap.snapshotMonth}</td>
+                        <td className="px-6 py-4 text-right text-sm text-gray-600">{snap.totalProperties}</td>
+                        <td className="px-6 py-4 text-right text-sm text-gray-600">{snap.totalGfaSqft.toLocaleString()}</td>
+                        <td className="px-6 py-4 text-right text-sm text-gray-600">{format(new Date(snap.createdAt), 'MMM d, yyyy')}</td>
+                        <td className="px-6 py-4 text-right">
+                          <Link 
+                            to={`/dashboard/${id}?month=${snap.snapshotMonth}`} 
+                            className="text-blue-600 hover:text-blue-700 font-bold text-xs"
+                          >
+                            View Analytics
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  {snapshots.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500 italic text-sm">
+                        No snapshots available for this company.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'portfolio' && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
