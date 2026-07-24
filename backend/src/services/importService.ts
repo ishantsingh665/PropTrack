@@ -98,6 +98,7 @@ export class ImportService {
 
               successCount++;
             } catch (err: any) {
+              console.error(`Import Error on row ${i + batch.indexOf(row) + 1}:`, err);
               errors.push({ row: i + batch.indexOf(row) + 1, error: err.message });
             }
           }
