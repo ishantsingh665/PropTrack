@@ -47,17 +47,19 @@ export class ImportService {
             try {
               // Basic Mapping & Validation
               const propertyTypeId = row.propertyTypeId || row.typeId;
-              const addressLine1 = row.addressLine1 || row.address;
-              const countryCode = row.countryCode || row.country;
+              const addressLine1 = row['address_line1'] || row.addressLine1 || row.address;
+              const countryCode = row['country_code'] || row.countryCode || row.country;
               const city = row.city;
+              const gfa_value = row['gfa_value'] || row.gfaValue || row.gfa || '0';
+              const gfa_unit = row['gfa_unit'] || row.gfaUnit || 'sqft';
+              const postal_code = row['postal_code'] || row.postalCode || null;
 
               if (!propertyTypeId || !addressLine1 || !countryCode || !city) {
                 throw new Error(`Missing required fields: ${JSON.stringify(row)}`);
               }
 
-              const gfaInputValue = parseFloat(row.gfaValue || row.gfa || '0') || null;
-              const gfaInputUnit = row.gfaUnit || 'sqft';
-              const gfaSqft = gfaInputValue ? convertToSqft(gfaInputValue, gfaInputUnit) : null;
+              const gfaInputValue = parseFloat(gfa_value) || null;
+              const gfaSqft = gfaInputValue ? convertToSqft(gfaInputValue, gfa_unit) : null;
 
               const property = await tx.property.create({
                 data: {
@@ -69,11 +71,11 @@ export class ImportService {
                   addressLatin: row.addressLatin || null,
                   addressNormalized: normalizeAddress(row.addressLatin || addressLine1),
                   city,
-                  postalCode: row.postalCode || null,
+                  postalCode: postal_code,
                   countryCode: countryCode.substring(0, 2).toUpperCase(),
                   gfaSqft,
                   gfaInputValue: gfaInputValue ? parseFloat(gfaInputValue as unknown as string) : null,
-                  gfaInputUnit: gfaInputUnit,
+                  gfaInputUnit: gfa_unit,
                   geocodeStatus: 'pending',
                 },
               });
