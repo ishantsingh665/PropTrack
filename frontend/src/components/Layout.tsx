@@ -34,9 +34,6 @@ const Layout: React.FC = () => {
   // Sidebar State
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Modal States
-  const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
-
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
@@ -82,27 +79,6 @@ const Layout: React.FC = () => {
     { name: 'Users', path: '/settings/users', icon: Users },
     { name: 'Geocoding', path: '/settings/geocoding', icon: MapPin },
   ];
-
-  const getHeaderActionLabel = () => {
-    if (location.pathname.startsWith('/companies/')) return 'Add Property';
-    if (location.pathname.startsWith('/companies')) return 'Add Company';
-    if (location.pathname.startsWith('/properties')) return 'Add Property';
-    if (location.pathname.startsWith('/transfers')) return 'Record Transfer';
-    return 'Add New';
-  };
-
-  const handleHeaderAction = () => {
-    if (location.pathname.startsWith('/import')) return; 
-    setIsHeaderModalOpen(true);
-  };
-
-  const showHeaderAction = () => {
-    const hiddenPaths = ['/', '/import', '/audit', '/snapshots'];
-    if (hiddenPaths.includes(location.pathname)) return false;
-    if (location.pathname.startsWith('/settings')) return false;
-    if (location.pathname.startsWith('/snapshots/')) return false;
-    return true;
-  };
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
@@ -258,15 +234,7 @@ const Layout: React.FC = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            {showHeaderAction() && (
-              <button 
-                onClick={handleHeaderAction}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {getHeaderActionLabel()}
-              </button>
-            )}
+            {/* Action button removed */}
           </div>
         </header>
 
@@ -276,56 +244,6 @@ const Layout: React.FC = () => {
           </div>
         </div>
       </main>
-
-      {/* Context-Aware Modals */}
-      <Modal
-        isOpen={isHeaderModalOpen}
-        onClose={() => setIsHeaderModalOpen(false)}
-        title={getHeaderActionLabel()}
-      >
-        {location.pathname.startsWith('/properties') && (
-          <PropertyForm 
-            onSubmit={async (data) => {
-              console.log('Layout: Property submission started:', data);
-              const { createProperty } = await import('../api/properties');
-              try {
-                await createProperty(data);
-                console.log('Layout: Property created successfully');
-                setIsHeaderModalOpen(false); 
-                window.location.reload();
-              } catch (error) {
-                console.error('Layout: Property creation failed:', error);
-                throw error;
-              }
-            }} 
-            onCancel={() => setIsHeaderModalOpen(false)} 
-          />
-        )}
-        {location.pathname.startsWith('/companies/') && (
-          <PropertyForm 
-            preselectedCompanyId={location.pathname.split('/')[2]}
-            onSubmit={async (data) => {
-              const { createProperty } = await import('../api/properties');
-              await createProperty(data);
-              setIsHeaderModalOpen(false); 
-              window.location.reload(); 
-            }} 
-            onCancel={() => setIsHeaderModalOpen(false)} 
-          />
-        )}
-        {location.pathname.startsWith('/companies') && !location.pathname.includes('/', 11) && (
-          <CompanyForm 
-            onSubmit={async () => { setIsHeaderModalOpen(false); window.location.reload(); }} 
-            onCancel={() => setIsHeaderModalOpen(false)} 
-          />
-        )}
-        {location.pathname.startsWith('/transfers') && (
-          <TransferForm 
-            onSubmit={async () => { setIsHeaderModalOpen(false); window.location.reload(); }} 
-            onCancel={() => setIsHeaderModalOpen(false)} 
-          />
-        )}
-      </Modal>
     </div>
   );
 };
