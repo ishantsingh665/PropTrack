@@ -5,6 +5,8 @@ import { getCompanies, createCompany, updateCompany, deleteCompany } from '../ap
 import Modal from '../components/Modal';
 import CompanyForm from '../components/CompanyForm';
 import CompanyNotes from '../components/CompanyNotes';
+import ConfirmationModal from '../components/ConfirmationModal';
+import NotificationComponent from '../components/Notification';
 import { cn } from '../lib/utils';
 
 const Companies: React.FC = () => {
@@ -14,6 +16,15 @@ const Companies: React.FC = () => {
   const [editingCompany, setEditingCompany] = useState<any>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   
+  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [confirmData, setConfirmData] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDestructive?: boolean;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
   // Pagination State
   const [pageSize, setPageSize] = useState<number>(20);
   const [currentCursor, setCurrentCursor] = useState<string | undefined>();
@@ -74,6 +85,7 @@ const Companies: React.FC = () => {
   };
 
 
+
   const handleCreateOrUpdate = async (formData: any) => {
     try {
       if (editingCompany) {
@@ -84,24 +96,51 @@ const Companies: React.FC = () => {
       setIsModalOpen(false);
       setEditingCompany(null);
       fetchCompanies();
-    } catch (error) {
+      setNotification({ message: 'Company saved successfully.', type: 'success' });
+    } catch (error: any) {
       console.error('Operation failed:', error);
-      alert('Failed to save company. Check if snapshot gate is open.');
+      setNotification({ message: 'Failed to save company. Check if snapshot gate is open.', type: 'error' });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this company?')) return;
-    try {
-      await deleteCompany(id);
-      fetchCompanies();
-    } catch (error) {
-      console.error('Delete failed:', error);
-    }
+    setConfirmData({
+      isOpen: true,
+      title: 'Delete Company',
+      message: 'Are you sure you want to delete this company? This action cannot be undone.',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteCompany(id);
+          fetchCompanies();
+          setNotification({ message: 'Company deleted successfully.', type: 'success' });
+        } catch (error) {
+          console.error('Delete failed:', error);
+          setNotification({ message: 'Failed to delete company.', type: 'error' });
+        }
+      }
+    });
   };
 
   return (
     <div className="space-y-6">
+      {notification && (
+        <NotificationComponent 
+          message={notification.message} 
+          type={notification.type} 
+          onClose={() => setNotification(null)} 
+        />
+      )}
+      
+      <ConfirmationModal
+        isOpen={confirmData.isOpen}
+        onClose={() => setConfirmData({ ...confirmData, isOpen: false })}
+        onConfirm={confirmData.onConfirm}
+        title={confirmData.title}
+        message={confirmData.message}
+        isDestructive={confirmData.isDestructive}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
