@@ -72,8 +72,8 @@ export class ImportService {
                   postalCode: row.postalCode || null,
                   countryCode: countryCode.substring(0, 2).toUpperCase(),
                   gfaSqft,
-                  gfaInputValue,
-                  gfaInputUnit,
+                  gfaInputValue: gfaInputValue ? parseFloat(gfaInputValue as unknown as string) : null,
+                  gfaInputUnit: gfaInputUnit,
                   geocodeStatus: 'pending',
                 },
               });
