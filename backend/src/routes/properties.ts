@@ -115,7 +115,7 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
           postalCode,
           countryCode,
           gfaSqft,
-          gfaInputValue,
+          gfaInputValue: gfaInputValue ? parseFloat(gfaInputValue) : null,
           gfaInputUnit,
           latitude: isManual ? parseFloat(latitude) : null,
           longitude: isManual ? parseFloat(longitude) : null,
@@ -195,7 +195,7 @@ const propertyRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
           postalCode,
           countryCode,
           gfaSqft,
-          gfaInputValue,
+          gfaInputValue: gfaInputValue ? parseFloat(gfaInputValue) : null,
           gfaInputUnit,
           ...(isManual ? {
             latitude: parseFloat(latitude),
