@@ -297,17 +297,21 @@ export class SnapshotService {
   }
 
   async getLiveDashboardData(companyId: string) {
+    const isAll = companyId === 'all';
+    
+    const whereClause = isAll 
+      ? { status: 'active', validTo: null, property: { deletedAt: null } }
+      : { companyId, status: 'active', validTo: null, property: { deletedAt: null } };
+
     const activeStakes = await this.prisma.propertyCompany.findMany({
-      where: {
-        companyId,
-        status: 'active',
-        validTo: null,
-        property: { deletedAt: null }
-      },
+      where: whereClause,
       include: { property: true }
     });
 
-    const propertyCount = activeStakes.length;
+    const propertyCount = isAll 
+      ? new Set(activeStakes.map(s => s.propertyId)).size
+      : activeStakes.length;
+
     const totalGfaSqft = activeStakes.reduce((sum: number, s: any) => sum + (s.property.gfaSqft || 0), 0);
     const activeStakeCount = activeStakes.length;
 
