@@ -644,7 +644,7 @@ const CompanyDetails: React.FC = () => {
         )}
       </div>
       {/* Modal at the bottom */}
-      <Modal isOpen={isAddingProperty} onClose={() => setIsAddingProperty(false)} title="Add Property">
+      <Modal isOpen={isAddingProperty} onClose={() => setIsAddingProperty(false)} title="Add Property" size="4xl">
         <PropertyForm
           preselectedCompanyId={id}
           onSubmit={handleAddProperty}
