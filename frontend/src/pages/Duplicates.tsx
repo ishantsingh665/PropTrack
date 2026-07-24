@@ -20,11 +20,22 @@ import {
   DuplicatePair 
 } from '../api/duplicates';
 import { cn } from '../lib/utils';
+import ConfirmationModal from '../components/ConfirmationModal';
+import Notification from '../components/Notification';
 
 const Duplicates: React.FC = () => {
   const [pairs, setPairs] = useState<DuplicatePair[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [confirmData, setConfirmData] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDestructive?: boolean;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
   const [filters, setFilters] = useState({
     status: 'pending',
     scope: '',
@@ -48,18 +59,24 @@ const Duplicates: React.FC = () => {
   }, [fetchPairs]);
 
   const handleScan = async () => {
-    if (!window.confirm('Trigger a full portfolio scan? This may take a few moments.')) return;
-    setIsScanning(true);
-    try {
-      const result = await scanDuplicates();
-      alert(`Scan complete. Found ${result.found} pairs.`);
-      fetchPairs();
-    } catch (error) {
-      console.error('Scan failed:', error);
-      alert('Scan failed.');
-    } finally {
-      setIsScanning(false);
-    }
+    setConfirmData({
+      isOpen: true,
+      title: 'Trigger Portfolio Scan',
+      message: 'This will scan the entire portfolio for duplicate records. This operation may take a few moments.',
+      onConfirm: async () => {
+        setIsScanning(true);
+        try {
+          const result = await scanDuplicates();
+          setNotification({ message: `Scan complete. Found ${result.found} pairs.`, type: 'success' });
+          fetchPairs();
+        } catch (error) {
+          console.error('Scan failed:', error);
+          setNotification({ message: 'Scan failed.', type: 'error' });
+        } finally {
+          setIsScanning(false);
+        }
+      }
+    });
   };
 
   const handleStatusUpdate = async (id: string, status: string) => {
@@ -75,16 +92,23 @@ const Duplicates: React.FC = () => {
     const removeId = keepId === pair.property1Id ? pair.property2Id : pair.property1Id;
     const keepName = keepId === pair.property1Id ? pair.property1.name : pair.property2.name;
 
-    if (!window.confirm(`Merge these records? ${keepName} will be the canonical record. This cannot be undone.`)) return;
-
-    try {
-      await mergeDuplicates(pair.id, keepId, removeId);
-      fetchPairs();
-    } catch (error) {
-      console.error('Merge failed:', error);
-      alert('Merge failed. Check audit logs for details.');
-    }
+    setConfirmData({
+      isOpen: true,
+      title: 'Merge Records',
+      message: `Merge these records? ${keepName} will be the canonical record. This cannot be undone.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await mergeDuplicates(pair.id, keepId, removeId);
+          fetchPairs();
+        } catch (error) {
+          console.error('Merge failed:', error);
+          setNotification({ message: 'Merge failed. Check audit logs for details.', type: 'error' });
+        }
+      }
+    });
   };
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -100,6 +124,23 @@ const Duplicates: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {notification && (
+        <Notification 
+          message={notification.message} 
+          type={notification.type} 
+          onClose={() => setNotification(null)} 
+        />
+      )}
+      
+      <ConfirmationModal
+        isOpen={confirmData.isOpen}
+        onClose={() => setConfirmData({ ...confirmData, isOpen: false })}
+        onConfirm={confirmData.onConfirm}
+        title={confirmData.title}
+        message={confirmData.message}
+        isDestructive={confirmData.isDestructive}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Duplicate Resolution</h1>
