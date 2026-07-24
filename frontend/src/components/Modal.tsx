@@ -25,15 +25,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className={cn("bg-white rounded-xl shadow-xl w-full overflow-hidden", sizeClasses[size])}>
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black bg-opacity-50">
+      <div className={cn("bg-white rounded-xl shadow-xl w-full flex flex-col max-h-[85vh] overflow-hidden", sizeClasses[size])}>
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 shrink-0">
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto">
           {children}
         </div>
       </div>
