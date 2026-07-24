@@ -295,4 +295,38 @@ export class SnapshotService {
       prevMonth
     };
   }
+
+  async getLiveDashboardData(companyId: string) {
+    const activeStakes = await this.prisma.propertyCompany.findMany({
+      where: {
+        companyId,
+        status: 'active',
+        validTo: null,
+        property: { deletedAt: null }
+      },
+      include: { property: true }
+    });
+
+    const propertyCount = activeStakes.length;
+    const totalGfaSqft = activeStakes.reduce((sum: number, s: any) => sum + (s.property.gfaSqft || 0), 0);
+    const activeStakeCount = activeStakes.length;
+
+    return {
+      current: {
+        month: 'Live',
+        propertyCount,
+        totalGfaSqft,
+        activeStakeCount,
+        createdAt: new Date().toISOString()
+      },
+      previous: null,
+      trends: {
+        propertyCountDelta: 0,
+        gfaDelta: 0,
+        stakesDelta: 0
+      },
+      month: 'Live',
+      prevMonth: null
+    };
+  }
 }

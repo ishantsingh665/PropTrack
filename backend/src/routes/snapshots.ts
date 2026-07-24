@@ -78,6 +78,12 @@ const snapshotRoutes: FastifyPluginAsync = async (server: FastifyInstance) => {
     return dashboard;
   });
 
+  // Get Live Dashboard Data
+  server.get('/dashboard/:companyId/live', { preHandler: [server.authenticate] }, async (request: any, reply) => {
+    const { companyId } = request.params;
+    return await snapshotService.getLiveDashboardData(companyId);
+  });
+
   // Check Snapshot Gate Status
   server.get('/snapshots/gate-status', { preHandler: [server.authenticate] }, async (request, reply) => {
     const isOpen = await snapshotService.isGateOpen();
