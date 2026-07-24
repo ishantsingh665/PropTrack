@@ -102,7 +102,12 @@ export class SnapshotService {
             snapshotId: snapshot.id,
             companyId: company.id,
             totalPropertyCount: companyProperties.length,
-            totalGfaSqft
+            totalGfaSqft,
+            // Copy all company fields at snapshot time
+            nameOverride: company.name,
+            isinOverride: company.isin,
+            statusOverride: company.status,
+            reportPropertyCountOverride: company.reportPropertyCount,
           }
         });
 
@@ -111,7 +116,13 @@ export class SnapshotService {
             data: {
               snapshotId: snapshot.id,
               propertyId: property.id,
-              snapshotCompanyId: sc.id
+              snapshotCompanyId: sc.id,
+              // Copy all property fields at snapshot time
+              nameOverride: property.name,
+              addressLine1Override: property.addressLine1,
+              cityOverride: property.city,
+              gfaSqftOverride: property.gfaSqft,
+              propertyLevelOverride: property.propertyLevel,
             }
           });
         }
@@ -170,12 +181,7 @@ export class SnapshotService {
         creator: { select: { name: true } },
         companySnapshots: {
           include: {
-            company: true,
-            propertySnapshots: {
-              include: {
-                property: true
-              }
-            }
+            propertySnapshots: true  // No longer include live company/property
           }
         }
       }
@@ -183,31 +189,27 @@ export class SnapshotService {
 
     if (!snapshot) throw new Error('Snapshot not found');
 
-    const companies = snapshot.companySnapshots.map((cs: any) => {
-      const c = cs.company;
-      return {
-        snapshotCompanyUid: cs.snapshotCompanyUid,
-        originalCompanyId: cs.companyId,
-        name: cs.nameOverride ?? c.name,
-        isin: cs.isinOverride ?? c.isin,
-        status: cs.statusOverride ?? c.status,
-        reportPropertyCount: cs.reportPropertyCountOverride ?? c.reportPropertyCount,
-        totalPropertyCount: cs.totalPropertyCount,
-        totalGfaSqft: cs.totalGfaSqft,
-        properties: cs.propertySnapshots.map((ps: any) => {
-          const p = ps.property;
-          return {
-            snapshotPropertyUid: ps.snapshotPropertyUid,
-            originalPropertyId: ps.propertyId,
-            name: ps.nameOverride ?? p.name,
-            addressLine1: ps.addressLine1Override ?? p.addressLine1,
-            city: ps.cityOverride ?? p.city,
-            gfaSqft: ps.gfaSqftOverride ?? p.gfaSqft,
-            propertyLevel: ps.propertyLevelOverride ?? p.propertyLevel
-          };
-        })
-      };
-    });
+    const companies = snapshot.companySnapshots.map((cs: any) => ({
+      snapshotCompanyUid: cs.snapshotCompanyUid,
+      originalCompanyId: cs.companyId,
+      // Read only from snapshot — no live fallback
+      name: cs.nameOverride,
+      isin: cs.isinOverride,
+      status: cs.statusOverride,
+      reportPropertyCount: cs.reportPropertyCountOverride,
+      totalPropertyCount: cs.totalPropertyCount,
+      totalGfaSqft: cs.totalGfaSqft,
+      properties: cs.propertySnapshots.map((ps: any) => ({
+        snapshotPropertyUid: ps.snapshotPropertyUid,
+        originalPropertyId: ps.propertyId,
+        // Read only from snapshot — no live fallback
+        name: ps.nameOverride,
+        addressLine1: ps.addressLine1Override,
+        city: ps.cityOverride,
+        gfaSqft: ps.gfaSqftOverride,
+        propertyLevel: ps.propertyLevelOverride,
+      }))
+    }));
 
     return {
       id: snapshot.id,
